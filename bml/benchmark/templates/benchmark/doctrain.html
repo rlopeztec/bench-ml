@@ -1,0 +1,283 @@
+{% load static %}
+
+{% include 'benchmark/header.html' %}
+
+<body style="margin:8;padding:8;">
+<br> <br>
+<h2 align="center">Documentation: Train and Run Model(s)</h2>
+
+<br>
+
+{% block content %}
+<form method="post" enctype="multipart/form-data" action="{% url 'signin' %}">
+    {% csrf_token %}
+    <table align="center" style="padding:30px;">
+      <tr align="center">
+        <td colspan="3" align="left" valign="top">
+          <label>This is the second step and consists of two sections: train and run model.
+		  <br>These sections could be used in two different scenarios: To identify the number of features to use and to find the best performing model(s).
+		  <br>
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td colspan="3" align="left" valign="top"> <hr> </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="left" valign="top">
+          <label>Select Dataset: </label>
+        </td>
+        <td colspan="2" align="left" valign="top">
+	  <label>Select the dataset that will be used for training. Remember it will be train and run in all the different combinations of scoring methods and number of features. I.e. "DT,RF" and "all,10" will be train and run 4 times (DT/all, DT/10, RF/all, RF/10).
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td colspan="3" align="left" valign="top"> <hr> </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="left" valign="top">
+          <label>Select model: </label>
+        </td>
+        <td colspan="2" align="left" valign="top">
+	  <label>This is the model used to train and run the model. There are two deep learning methods (Fully Connected Neural Network and Convolutional Neural Network) and 4 machine learning methods, one of them is for datasets with normal distribution (Gausian Naive Bayes) and all others are non-parametric.
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="right" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Fully Connected Neural Network </label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  Is a Deep Learning method where each of the neurons from one layer are connected all neurons from the next layer. Parameters are explained below.
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="right" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Convolutional Neural Network</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  Is a Deep Learning method using Conv1D to allow datasets with two dimensions just like in the other methods on this benchmarking tool. Parameters are explained below.
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="right" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Decision Trees</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  Is using Decision Trees Classifier from Scikit-Learn with all parameters with its default values.
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="right" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Random Forest</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  Is using Random Forest Classifier from Scikit-Learn with all parameters with its default values.
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="right" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Support Vector Machine</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  Is using Support Vector Machine Classifier from Scikit-Learn with all parameters with its default values.
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="right" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Gaussian Naive Bayes</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  Is using Gaussian Naive Bayes Classifier from Scikit-Learn with all parameters with its default values.
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="left" valign="top">
+          <label>Fully Connected Neural Network</label>
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Number of filters</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  Filters detect spatial patterns such as edges in an image by detecting the changes in intensity values of the image. Is expecting an integer between 1 and 9999.
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="left" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Activation function</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  Relu, tanh and swish are the most commonly used but there is also elu, sigmoid, and linear.
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="left" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Activation output</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="left" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Optimizer</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="left" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Learning rate</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="left" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Loss</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="left" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Dropout</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="left" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Early stop</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="left" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Epochs</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>
+		  It refers to one cycle through the full training dataset. Is expecting an integer between 1 and 9999 epochs
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td colspan="3" align="left" valign="top"> <hr> </td>
+      </tr>
+
+      <tr align="center">
+        <td align="left" valign="top">
+          <label>Results: </label>
+        </td>
+        <td colspan="2" align="left" valign="top">
+	  <label>Results are shown at the bottom along with the parameters used for each run. Accuracy is the weighted average of the runs for each dataset, there could be more than one run because each method and model (FC, CNN, DT, RF, SVM, GaussianNB) is run against the combination of scoring methods (DT,RF) and number of features i.e. all,10,50. In this example there would be 6 runs.</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td colspan="3" align="left" valign="top"> <hr> </td>
+      </tr>
+
+      <tr align="center">
+        <td align="center" colspan="3">
+          <div class="col-md-6 mb-3">
+          </div>
+          <div class="col-md-6 mb-3">
+            <button style="background-color: #4CAF50;" type="button" onclick="window.close()">Close</button>
+          </div>
+        </td>
+      </tr>
+      <tr align="center">
+        <td align="center" colspan="2">
+          {{message}}
+        </td>
+      </tr>
+    </table>
+</form>
+{% include 'benchmark/footer.html' %}
+{% endblock %}
+

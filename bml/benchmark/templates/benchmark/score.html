@@ -1,0 +1,194 @@
+{% load static %}
+
+{% include 'benchmark/header.html' %}
+
+<body style="margin:8;padding:8;">
+<br> <br>
+<table width="100%">
+  <tr>
+    <td width="38%"><h3 align="left">Load, Score and Split</h3> </td>
+    <td width="15%" align="right"><div class="col-md-6 mb-3">Datasets:</div></td>
+    <td width="16%">
+      <div class="col-md-6 mb-3">
+        <a href="/static/benchmark/images/gtex_6_100.tsv" download>GTEx</a>
+        <div class="help-tip"><p>Example GTEx dataset, download it, entered into "Choose File", Datatype:Gene Expression, Filetype:tsv, TargetClass:Outcome</p> </div>
+      </div>
+    </td>
+    <td width="18%">
+      <div class="col-md-6 mb-3">
+        <a href="/static/benchmark/images/motifs.tsv" download>Motifs</a>
+        <div class="help-tip"><p> Example Motifs dataset, download it, entered into "Choose File", Datatype:DNA, Filetype:tsv, TargetClass:Label</p> </div>
+      </div>
+    </td>
+    <td width="11%">
+      <div class="col-md-6 mb-3">
+        <a href="/static/benchmark/images/iris.csv" download>Iris</a>
+        <div class="help-tip"><p> Example Iris flowers dataset, download it, entered into "Choose File", Datatype:other, Filetype:csv, TargetClass:species</p> </div>
+      </div>
+    </td>
+    <td style="font-size:12;" width="2%">
+	    <a href="{% url 'docscore' %}" target="popup">Documentation</a>
+    </td>
+</tr>
+</table>
+<br>
+
+{% block content %}
+<form method="post" enctype="multipart/form-data" action="{% url 'score' %}">
+    {% csrf_token %}
+    <table width="100%" cellpadding="4">
+      <tr>
+        <td width="04%" style="font-size:22;font-weight:bold;">Load</td>
+        <td width="23%">Data Type:</td>
+        <td width="23%">
+        <select type="select" id="dataType" name="dataType" required>
+          <option value="Gene Expression">Gene Expression</option>
+          <option value="Microbiome" selected>Microbiome</option>
+          <option value="DNA">DNA</option>
+          <option value="Variants" selected>Variants</option>
+          <option value="Other">Other</option>
+        </select>
+        </td>
+        <td width="02%">
+	  <div class="col-md-6 mb-3">
+            <div class="help-tip">
+	      <p> Choose the data type file. Gene Expression is for one target column and many features (dimensions) in a matrix like file. DNA is for one target column and one column with bases or nucleotides (ACGT). Other is for any data type that has one target column and many features or dimensions in a matrix like file</p> 
+	    </div>
+          </div>
+        </td>
+	<td width="23%">File type:</td>
+	<td width="23%">
+	  <select type="select" id="fileType" name="fileType" value='tsv' required>
+            <option value='tsv' selected>tsv</option>
+            <option value='csv'>csv</option>
+          </select>
+        </td>
+        <td width="02%">
+	  <div class="col-md-6 mb-3">
+            <div class="help-tip">
+	      <p> Choose the file type. Either tab separated or comma separated</p> 
+	    </div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td width="08%"></td>
+	<td> File: </td>
+	<td><input type="file" id="myfile" name="myfile" placeholder="" required> </td>
+        <td> </td>
+        <td>File description: </td>
+        <td> <input type="text" id="fileDesc" name="fileDesc" value="file description" required> </td>
+        <td> </td>
+      </tr>
+      <tr> <td colspan="7"><hr> </td> </tr>
+      <tr>
+        <td width="04%" style="font-size:22;font-weight:bold;">Score</td>
+        <td>Methods to score with: </td>
+	<td><input type="text" id="methods" name="methods" value="RF" required></td>
+        <td>
+	  <div class="col-md-6 mb-3">
+            <div class="help-tip">
+	    <p> Method(s) used to score importance of the features, it could be both DT,RF or just DT or RF</p> 
+	    </div>
+          </div>
+        </td>
+        <td>Number of features i.e. all,10,50: </td>
+	<td><input type="text" id="numberFeatures" name="numberFeatures" value="10" required></td>
+        <td>
+	  <div class="col-md-6 mb-3">
+            <div class="help-tip">
+	    <p> Number of features (comma separated) to have on the train/test files either all,10,50,100 or any number of features. It does remove features with no values</p> 
+	    </div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td width="04%"></td>
+        <td>Regression: </td>
+	<td><input type="checkbox" id="regression" name="regression"></td>
+        <td>
+	  <div class="col-md-6 mb-3">
+            <div class="help-tip">
+	    <p> Check regression box if this is a regression dataset, it will help bypass scoring, because methods can't score on regression classes as it is a variable with real numbers hence continuous</p> 
+	    </div>
+          </div>
+        </td>
+      </tr>
+      <tr> <td colspan="7"><hr> </td> </tr>
+      <tr>
+        <td width="04%" style="font-size:22;font-weight:bold;">Split</td>
+        <td>Training percent i.e 80 (80%): </td>
+	<td><input type="text" id="trainingPercent" name="trainingPercent" value="80" required onkeypress='return event.charCode >= 48 && event.charCode <= 57'></td>
+        <td>
+	  <div class="col-md-6 mb-3">
+            <div class="help-tip">
+	    <p> This is the percent of rows that would be used as training leaving the remaining for test</p> 
+	    </div>
+          </div>
+        </td>
+	<td colspan="2">Distribute training % per class
+	<input type="hidden" id="distClass" name="distClass" value=True></td>
+        <td>
+	  <div class="col-md-6 mb-3">
+            <div class="help-tip">
+	    <p> Training and test data is distributed equally by class (unique values from the target class/variable/Y) to ensure all classes get an even percent of data for trainining and testing</p> 
+	    </div>
+          </div>
+        </td>
+        <td> </td>
+      </tr>
+      <tr>
+	<td> </td>
+        <td> Label (y): </td>
+        <td> <input type="text" id="targetClass" name="targetClass" value="Label" required> </td>
+        <td>
+	  <div class="col-md-6 mb-3">
+            <div class="help-tip">
+	    <p> This is the column name that has the label, target class or variable (Y). Is case sensitive.</p> 
+	    </div>
+          </div>
+        </td>
+	<td>
+	  <button style="background-color: #4CAF50;width:180px;height:35px" type="submit">Upload+Score+Split</button>
+	</td>
+      </tr>
+    </table>
+</form>
+{% endblock %}
+
+<hr>
+<br>
+
+{% if file_raw_list %}
+    <table style="width:100%;padding:10px">
+      <tr>
+        <th style="padding:2px">ID</td>
+        <th style="padding:2px">FILE NAME</td>
+        <th style="padding:2px">FILE DESCRIPTION</td>
+        <th style="padding:2px">DATA TYPE</td>
+        <th style="padding:2px">METHODS</td>
+        <th style="padding:2px"># OF FEATURES</td>
+        <th style="padding:2px">TRAIN</td>
+        <th style="padding:2px">TARGET</td>
+        <th style="padding:2px">CREATED DATE</td>
+      </tr>
+    {% for fileRaw in file_raw_list %}
+      <tr>
+        <td style="padding:2px"><a href="#">{{ fileRaw.id }}</a></td>
+        <td style="padding:2px">{{fileRaw.file_name}}</td>
+        <td style="padding:2px">{{fileRaw.file_desc}}</td>
+        <td style="padding:2px">{{fileRaw.data_type}}</td>
+        <td style="padding:2px">{{fileRaw.methods}}</td>
+        <td style="padding:2px">{{fileRaw.number_features}}</td>
+        <td style="padding:2px">{{fileRaw.percent_train}}%</td>
+        <td style="padding:2px">{{fileRaw.target_class}}</td>
+        <td style="padding:2px">{{fileRaw.pub_date}}</td>
+      </tr>
+    {% endfor %}
+    </table>
+{% else %}
+    <br><br>
+    <p>No files has been scored.</p>
+{% endif %}
+
+{% include 'benchmark/footer.html' %}

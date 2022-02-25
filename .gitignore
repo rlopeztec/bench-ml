@@ -1,0 +1,33 @@
+# mac files
+.DS_store
+.git/
+
+# Ignore node_modules folder
+node_modules
+
+# ignore directories
+logs/fit/
+polls/
+bml/benchmarkenv/
+bml/benchmark/files/
+bml/benchmark/dmesg/
+bml/benchmark/static/benchmark/images/
+bml/benchmark/dmesg/
+
+mysite/__pycache__/
+benchmark/__pycache__/
+benchmark/migrations/__pycache__/
+bml/benchmark/__pycache__/
+bml/benchmark/migrations/__pycache__/
+
+
+# ignore files
+benchmark/gtex_6_1000.tsv
+benchmark/gtex_6_100_21.tsv
+db.sqlite3
+db.sqlite3.bck
+bml/db.sqlite3
+benchmark/genes_all.tsv
+bml/benchmark/views.py.20211214
+
+

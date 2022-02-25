@@ -1,0 +1,259 @@
+{% load static %}
+
+{% include 'benchmark/header.html' %}
+
+<body style="margin:8;padding:8;">
+<br> <br>
+<h2 align="center">Documentation: Load Dataset, Score Features, and Split in Train and Test</h2>
+
+<br>
+
+{% block content %}
+<form method="post" enctype="multipart/form-data" action="{% url 'signin' %}">
+    {% csrf_token %}
+    <table align="center" style="padding:30px;">
+      <tr align="center">
+        <td colspan="3" align="left" valign="top">
+          <label>This is the first step and consists of three sections: Load file, score features and split in train and test.
+		  <br>
+		  There are also three test files that could be used to test the application or to see examples of how the data should be formatted for each of the three data types; see descriptions for each of the data type files below.</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td colspan="3" align="left" valign="top"> <hr> </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="left" valign="top">
+          <label>Load File: </label>
+        </td>
+        <td colspan="2" align="left" valign="top">
+	  <label>Uploads file to server and enters metadata needed to process the dataset into the database like file name, data type, file type and target class or variable (y)</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="right" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Data Type: </label>
+        </td>
+        <td align="left" valign="top">
+	  <label>"Gene Expression", refers to gene expression values as features, input or columns and rows as samples, where the "label", target class, variable (y) or output is also a column.</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="right" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+        </td>
+        <td align="left" valign="top">
+	  <label>"DNA" expects two columns. The "label" column and another column as DNA (ACGT's). One hot encoding is applied to the DNA column making 4 features (or columns) per every nucleotide or base (A,C,G or T), i.e. 50 bases in that column will become 200 features as in the example provided in the file motifs.tsv</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="right" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+        </td>
+        <td align="left" valign="top">
+	  <label>"Other", is the same as "Gene Expression" but is separated just to note that any data type can be added as long as it follows the format of features (or input) as columns and rows as samples. The "label", target class, variable (y) or output is also a column.</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="right" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>File Type: </label>
+        </td>
+        <td align="left" valign="top">
+	  <label>It accepts either tab separated (tsv) or comma separated (csv) values (or columns).</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td width="15%" align="right" valign="top">
+	</td>
+        <td width="10%" align="left" valign="top">
+          <label>Label (y): </label>
+        </td>
+        <td align="left" valign="top">
+	  <label>This is the column that defines the label, target class or variable (y) or output. All other columns (or features) are used to train and identify what the label column is.</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td colspan="3" align="left" valign="top"> <hr> </td>
+      </tr>
+
+      <tr align="center">
+        <td align="left" valign="top">
+          <label>Score Features: </label>
+        </td>
+        <td colspan="2" align="left" valign="top">
+	  <label>Use Decision Tree and/or Random Forest classifiers to score features importance then selects the most relevant features. It can create several datasets with different number of features either "all" features or 10 or 50 or 100 or any number of features. i.e. 3,17,25,9999. This helps to evaluate how many features are the ideal number to use in any given classifier (from the classifiers in the "train" and run models section)</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td align="left" valign="top">
+        </td>
+        <td align="left" valign="top">
+	  <label>Methods to score with</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>Decision Trees and/or Random Forest is used to score features to be able to choose the most important features. Choose "DT", "RF", or "DT,RF".</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td align="left" valign="top">
+        </td>
+        <td align="left" valign="top">
+	  <label>Number of features</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>Once features are scored with DT or RF datasets are created with the number of features selected. I.e. if the method was RF and number of features "all,10" it will create two datasets, one with all feateures and another one with only 10 features scored with RF. If the methods were "DT,RF" and number of features "20,30" it will create 4 datasets: the 20 most important features scored with DT, 30 / DT, 20 / RF, and 30 / RF</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td colspan="3" align="left" valign="top"> <hr> </td>
+      </tr>
+
+      <tr align="center">
+        <td align="left" valign="top">
+          <label>Split in Train and Test: </label>
+        </td>
+        <td colspan="2" align="left" valign="top">
+	  <label>Splits data into train and test and distribute classes (values from the "label") proportionally as well</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td align="left" valign="top">
+        </td>
+        <td align="left" valign="top">
+	  <label>Training Percent</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>Split dataset into a training dataset and a test dataset with the percent given on this field for training and the remaining rows (or samples) out of 100% for testing.</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td align="left" valign="top">
+        </td>
+        <td align="left" valign="top">
+	  <label>Distribute training % per class</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>This step is done automatically.
+		  The values of the "label" or target class or variable (y) or output are distributed equally per class (classes are the different values on this field). The idea is to have a similar representation of training data in the classes with very few rows and reduce randomness.
+		  I.e. if there are 100 rows (or samples) and the label column has 2 different values, one with 10 rows and the other with 90 rows and the training percent is 80 percent it will assign 8 rows of the first class and 72 rows of the second class to the training dataset and the remaining 20% of the rows (2 and 18) to the test dataset.</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td colspan="3" align="left" valign="top"> <hr> </td>
+      </tr>
+
+      <tr align="center">
+        <td align="left" valign="top">
+          <label>Test Datasets: </label>
+        </td>
+        <td colspan="2" align="left" valign="top">
+	  <label>Three datasets are provided as examples, one for each of the "Data Types". These files could be used to learn about the format expected on each "Data Type"</label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td align="left" valign="top">
+        </td>
+        <td align="left" valign="top">
+	  <label>Gene Expression (GTEx)</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>This dataset comes from the GTEx project from the broad institue, it has 1693 samples for 6 different tissues (out of 56 tissues).
+		  It only has 100 transcripts or features (out of 56,000 transcripts) so it finishes fast when trying this tool.
+		  <br><br>Download the example dataset from this website using the link "GTEx" at the top.
+		  <br><br>Use the following options:
+		  <br>- Data type: Gene Expression
+		  <br>- File type: tsv
+		  <br>- Label: Outcome
+		  <br><br>Any values for the other fields i.e.
+		  <br>- Methods to score with: RF
+		  <br>- Number of features: all,20,50
+		  <br>- Training percent: 80
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td align="left" valign="top">
+        </td>
+        <td align="left" valign="top">
+	  <label>DNA (Motifs)</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>This dataset is from a deep learning paper in genomics and it has 2,000 sequences. It is about identifying which DNA sequences are motifs.
+		  The labels or outputs are 0 (is not a motif) or 1 (is a motif). There is only one other columsn with 50 bases (ACGT), each of these bases will be one-hot-encoded and become 4 features each for a total of 200 features (50 bases * 4)
+		  <br><br>Download the example dataset from this website using the link "Motifs" at the top.
+		  <br><br>Use the following options:
+		  <br>- Data type: DNA
+		  <br>- File type: tsv
+		  <br>- Label: Label
+		  <br><br>Any values for the other fields i.e.
+		  <br>- Methods to score with: RF
+		  <br>- Number of features: all,20,50
+		  <br>- Training percent: 80
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td align="left" valign="top">
+        </td>
+        <td align="left" valign="top">
+	  <label>Other (iris flowers)</label>
+        </td>
+        <td align="left" valign="top">
+	  <label>This is not a genomics dataset; this dataset is the very common iris flowers dataset to identify which flower it is using 4 features with the characteristics of each flower (sepal length, sepal width, petal length, petal width). 
+		  It has 3 different types of flowers (label) with 150 flowers (rows).
+		  The labels or outputs are setosa, versicolor and virginica.
+		  <br><br>Download the example dataset from this website using the link "iris" at the top.
+		  <br><br>Use the following options:
+		  <br>- Data type: Other
+		  <br>- File type: csv
+		  <br>- Label: species
+		  <br><br>Any values for the other fields i.e.
+		  <br>- Methods to score with: DT,RF
+		  <br>- Number of features: all
+		  <br>- Training percent: 80
+	  </label>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td align="center" colspan="2">
+          <div class="col-md-6 mb-3">
+          </div>
+          <div class="col-md-6 mb-3">
+            <button style="background-color: #4CAF50;" type="button" onclick="window.close()">Close</button>
+          </div>
+        </td>
+      </tr>
+      <tr align="center">
+        <td align="center" colspan="2">
+          {{message}}
+        </td>
+      </tr>
+    </table>
+</form>
+{% include 'benchmark/footer.html' %}
+{% endblock %}
+

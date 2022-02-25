@@ -1,0 +1,122 @@
+{% load static %}
+
+{% include 'benchmark/header.html' %}
+
+<body style="margin:8;padding:8;">
+<br> <br>
+<h2 align="center">Load File, Score Features and Split Dataset in Train and Test</h2>
+
+{% block content %}
+<form method="post" enctype="multipart/form-data" action="{% url 'score' %}">
+    {% csrf_token %}
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="dataType">Data Type: </label>
+        <select type="select" id="dataType" name="dataType" required>
+          <option value="Gene Expression">Gene Expression</option>
+          <option value="DNA" selected>DNA</option>
+          <option value="Variants">Variants</option>
+          <option value="Other">Other</option>
+        </select>
+        <div class="invalid-feedback">
+          Enter only one data type like Gene Expression, DNA, Motifs, Variants
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="myfile">File: </label>
+        <input type="file" id="myfile" name="myfile" placeholder="" required>
+        <div class="invalid-feedback">
+          File to load name is required
+        </div>
+        <label for="fileType">File type: </label>
+        <select type="select" id="fileType" name="fileType" value='tsv' required>
+          <option value='tsv' selected>tsv</option>
+          <option value='csv'>csv</option>
+        </select>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="fileDesc">File description: </label>
+        <input type="text" id="fileDesc" name="fileDesc" value="file description" required>
+        <div class="invalid-feedback">
+          File description is required
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="targetClass">Target class (y): </label>
+        <input type="text" id="targetClass" name="targetClass" value="Label" required>
+        <div class="invalid-feedback">
+          Target Class this is the Y
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="numberFeatures">Number of features i.e. all,10,50: </label>
+        <input type="text" id="numberFeatures" name="numberFeatures" value="10" required>
+        <div class="invalid-feedback">
+          Number of features to load is required
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="methods">Methods to score with: </label>
+        <input type="text" id="methods" name="methods" value="DT" required>
+        <div class="invalid-feedback">
+          Enter all methods to score with each number of features
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="trainingPercent">Training percent i.e 80 (80%): </label>
+        <input type="text" id="trainingPercent" name="trainingPercent" value="80" required>
+        <div class="invalid-feedback">
+          training percent should be between 1 and 100 (%)
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="distClass">Distribute training % per class: </label> &nbsp;&nbsp;&nbsp;
+        <input type="hidden" id="distClass" name="distClass" value=True>
+        <div class="invalid-feedback">
+          Check if you want to distribute training percent per class
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+      </div>
+      <div class="col-md-6 mb-3">
+        <button style="background-color: #4CAF50;" type="submit">Upload + Score + Split</button>
+      </div>
+    </div>
+</form>
+{% endblock %}
+
+{% if file_raw_list %}
+    <ul>
+    <table style="width:100%;padding:10px">
+      <tr>
+        <th style="padding:2px">ID</td>
+        <th style="padding:2px">FILE NAME</td>
+        <th style="padding:2px">FILE DESCRIPTION</td>
+        <th style="padding:2px">METHODS</td>
+        <th style="padding:2px"># OF FEATURES</td>
+        <th style="padding:2px">TRAIN</td>
+        <th style="padding:2px">TARGET</td>
+        <th style="padding:2px">CREATED DATE</td>
+      </tr>
+    {% for fileRaw in file_raw_list %}
+      <tr>
+        <td style="padding:2px"><a href="#">{{ fileRaw.id }}</a></td>
+        <td style="padding:2px">{{fileRaw.file_name}}</td>
+        <td style="padding:2px">{{fileRaw.file_desc}}</td>
+        <td style="padding:2px">{{fileRaw.methods}}</td>
+        <td style="padding:2px">{{fileRaw.number_features}}</td>
+        <td style="padding:2px">{{fileRaw.percent_train}}%</td>
+        <td style="padding:2px">{{fileRaw.target_class}}</td>
+        <td style="padding:2px">{{fileRaw.pub_date}}</td>
+      </tr>
+    {% endfor %}
+    </table>
+    </ul>
+{% else %}
+    <br><br>
+    <p>No files has been scored.</p>
+{% endif %}
+

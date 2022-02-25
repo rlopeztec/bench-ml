@@ -1,0 +1,17 @@
+{% load static %}
+
+{% include 'benchmark/header.html' %}
+
+<br> <br> <br>
+<h2 align="center">Compare Models Performance</h2>
+<p class="lead">.</p>
+
+{% if latest_question_list %}
+    <ul>
+    {% for question in latest_question_list %}
+        <li><a href="{% url 'detail' question.id %}">{{ question.question_text }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No benchmarks are available.</p>
+{% endif %}

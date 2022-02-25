@@ -1,0 +1,238 @@
+{% load static %}
+
+{% include 'benchmark/header.html' %}
+
+{% block content %}
+<form method="post" id="evaluateForm" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <body style="margin:8;padding:8;">
+    <br> <br>
+    <h5 align="left">Select a dataset/file to evaluate</h2>
+
+    <input type="hidden" id="radioSelection" name="radioSelection">
+    <input type="hidden" id="deleteFile" name="deleteFile">
+    <input type="hidden" id="deleteModel" name="deleteModel">
+    <input type="hidden" id="deleteFeature" name="deleteFeature">
+
+    {% if file_raw_list %}
+        <ul>
+        <table style="width:100%;padding:10px">
+          <tr>
+            <th style="padding:2px"></td>
+            <th style="padding:2px">ID</td>
+            <th style="padding:2px">FILE NAME</td>
+            <th style="padding:2px">FILE DESCRIPTION</td>
+            <th style="padding:2px">SCORING</td>
+            <th style="padding:2px"># OF FEATURES</td>
+            <th style="padding:2px">TRAIN</td>
+            <th style="padding:2px">TARGET</td>
+            <th style="padding:2px">REG</td>
+            <th style="padding:2px">CREATED DATE</td>
+            <th style="padding:2px;text-align:right">DEL</td>
+          </tr>
+        {% for fileRaw in file_raw_list %}
+          <tr>
+            <td style="padding:2px">
+                <input type="radio" id="idSelected" name="idSelected" value="{{fileRaw.id}}" onclick="document.getElementById('radioSelection').value=1; document.getElementById('evaluateForm').submit();" {% if idSelected == fileRaw.id %} checked {% endif %}>
+            </td>
+            <td style="padding:2px">{{fileRaw.id}}</td>
+            <td style="padding:2px">{{fileRaw.file_name}}</td>
+            <td style="padding:2px">{{fileRaw.file_desc}}</td>
+            <td style="padding:2px">{{fileRaw.methods}}</td>
+            <td style="padding:2px">{{fileRaw.number_features}}</td>
+            <td style="padding:2px">{{fileRaw.percent_train}}%</td>
+            <td style="padding:2px">{{fileRaw.target_class}}</td>
+            <td style="padding:2px">{{fileRaw.regression}}</td>
+            <td style="padding:2px">{{fileRaw.pub_date}}</td>
+            <td style="padding:2px;text-align:right">
+                <img src="/static/benchmark/images/trashcan.jpg" width="30" height="30" alt="delete file" onclick="answer=confirm('Do you want to delete {{fileRaw.id}} ?'); if (answer) { document.getElementById('deleteFile').value={{fileRaw.id}};document.getElementById('evaluateForm').submit() }"/>
+            </td>
+          </tr>
+        {% endfor %}
+        </table>
+        </ul>
+    {% else %}
+        <br><br>
+        <p>No files has been scored.</p>
+    {% endif %}
+
+<hr>
+
+{% if model_run_list %}
+    <ul>
+    <table style="width:100%;padding:10px">
+      <tr>
+        <th style="padding:2px"></td>
+        <th style="padding:2px">ID</td>
+        <th style="padding:2px">FILE ID</td>
+        <th style="padding:2px">MODEL</td>
+        <th style="padding:2px">NOTES</td>
+        <th style="padding:2px">ACCURACY</td>
+        <th style="padding:2px">PARAMETERS</td>
+        <th style="padding:2px;text-align:right">DEL</td>
+      </tr>
+    {% for modelRun in model_run_list %}
+      <tr>
+        <td style="padding:2px">
+            <input type="radio" id="id_model_run" name="id_model_run" value="{{modelRun.id}}" onclick="document.getElementById('radioSelection').value=2; document.getElementById('evaluateForm').submit();" {% if idModelRun == modelRun.id %} checked {%endif%}>
+        </td>
+        <td style="padding:2px">{{ modelRun.id }}</td>
+        <td style="padding:2px">{{modelRun.file_raw_id}}</td>
+        <td style="padding:2px">{{modelRun.model_ran}}</td>
+        <td style="padding:2px">{{modelRun.notes}}</td>
+        <td style="padding:2px">{{modelRun.weighted_accuracy|floatformat:4}}</td>
+        <td style="padding:2px">{{ parametersList|getDictValue:modelRun.id }}</td>
+        <td style="padding:2px;text-align:right">
+            <img src="/static/benchmark/images/trashcan.jpg" width="30" height="30" alt="delete model" onclick="answer=confirm('Do you want to delete {{modelRun.id}} ?'); if (answer) { document.getElementById('deleteModel').value={{modelRun.id}};document.getElementById('evaluateForm').submit() }"/>
+        </td>
+      </tr>
+    {% endfor %}
+    </table>
+    </ul>
+{% else %}
+    <br><br>
+    <p>No runs has been made for this dataset. Select a file id from above</p>
+{% endif %}
+
+<hr>
+
+{% if model_run_features_list %}
+    <ul>
+    <table style="width:100%;padding:10px">
+      <tr>
+        <th style="padding:2px"></td>
+        <th style="padding:2px">ID</td>
+        <th style="padding:2px">MODEL ID</td>
+        <th style="padding:2px">SCORED-FEATURES</td>
+        <th style="padding:2px">ACCURACY</td>
+        <th style="padding:2px">REGRESSION ERROR</td>
+        <th style="padding:2px">CREATED DATE</td>
+        <th style="padding:2px;text-align:right">DEL</td>
+      </tr>
+    {% for modelRunFeatures in model_run_features_list %}
+      <tr>
+        <td style="text-align:center;padding:2px">
+            <input type="radio" id="id_model_run_features" name="id_model_run_features" value="{{modelRunFeatures.id}}" onclick="document.getElementById('radioSelection').value=3; document.getElementById('evaluateForm').submit();" {% if idModelRunFeatures == modelRunFeatures.id %} checked {% endif %}>
+        </td>
+        <td style="text-align:left;padding:2px">{{modelRunFeatures.id}}</td>
+        <td style="text-align:left;padding:2px">{{modelRunFeatures.model_run_id}}</td>
+        <td style="text-align:left;padding:2px">{{modelRunFeatures.method}}-{{modelRunFeatures.num_features}}</td>
+        <td style="text-align:left;padding:2px">{{modelRunFeatures.accuracy_score|floatformat:4}}</td>
+        <td style="text-align:left;padding:2px">{{modelRunFeatures.error_rate|floatformat:4}}</td>
+        <td style="text-align:left;padding:2px">{{modelRunFeatures.pub_date}}</td>
+        <td style="text-align:center;padding:2px;text-align:right">
+            <img src="/static/benchmark/images/trashcan.jpg" width="30" height="30" alt="delete feature" onclick="answer=confirm('Do you want to delete {{modelRunFeatures.id}} ?'); if (answer) { document.getElementById('deleteFeature').value={{modelRunFeatures.id}};document.getElementById('evaluateForm').submit() }"/>
+        </td>
+      </tr>
+    {% endfor %}
+    </table>
+    </ul>
+{% else %}
+    <br><br>
+    <p>No models to evaluate. Select a run id from above</p>
+{% endif %}
+
+<hr>
+
+<div class="row">
+{% if classification_report_list %}
+  <div class="col-md-6 mb-3">
+    <table style="width:100%;padding:10px">
+      <tr>
+        <th colspan="5" style="padding:2px">Classification Report</td>
+      </tr>
+      <tr>
+        <td style="padding:2px">CLASS</td>
+        <td style="padding:2px">PRECISION</td>
+        <td style="padding:2px">RECALL</td>
+        <td style="padding:2px">F1-SCORE</td>
+        <td style="padding:2px">SUPPORT</td>
+      </tr>
+    {% for cr in classification_report_list %}
+      <tr>
+        <td style="padding:2px">{{cr.class_name}}</td>
+        <td style="padding:2px">{{cr.precision|floatformat:4}}</td>
+        <td style="padding:2px">{{cr.recall|floatformat:4}}</td>
+        <td style="padding:2px">{{cr.f1_score|floatformat:4}}</td>
+        <td style="padding:2px">{{cr.support|floatformat}}</td>
+      </tr>
+    {% endfor %}
+    </table>
+  </div>
+  <div class="col-md-6 mb-3">
+    {% if confusion_matrix_list %}
+      <table style="width:100%;padding:10px">
+        <tr>
+          <th colspan="{{confusion_matrix_list|length}}" style="padding:2px">Confusion Matrix</td>
+        </tr>
+        <tr>
+          <td colspan="{{confusion_matrix_list|length}}" style="padding:2px">&nbsp</td>
+        </tr>
+        {% for cm in confusion_matrix_list %}
+          {% if cm.y == 0 %}
+            {% if cm.x > 0 %}
+              </tr>
+            {% endif %}
+            <tr>
+          {% endif %}
+          {% if cm.x == cm.y %}
+            <td style="padding:2px"><b>{{cm.quantity}}</b></td>
+          {% else %}
+            <td style="padding:2px">{{cm.quantity}}</td>
+          {% endif %}
+        {% endfor %}
+        </tr>
+      </table>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="col-md-6 mb-3">
+    <br><br>
+    <p>No details i.e. accuracy, loss curve, classification report, confusion matrix, pca</p>
+  </div>
+{% endif %}
+</div>
+
+<div class="row">
+{% if accuracy_curve %}
+    <table style="width:100%;padding:10px" widht="100%">
+      <tr width="100%">
+        <td style="padding:2px" width="50%" align="center">
+        {% if regression == 'on' %}
+          <img src="/static/benchmark/images/{{idModelRunFeatures}}_mae.png" alt="mae" width="460" height="280">
+        {% else %}
+          <img src={{accuracy_curve}} alt="accuracy curve" width="460" height="280">
+        {% endif %}
+        </td>
+        <td style="padding:2px" width="50%" align="center">
+          <img src={{loss_curve}} alt="loss curve" width="460" height="280">
+        </td>
+      </tr>
+      <tr width="100%">
+        <td style="padding:2px" width="50%" align="center">
+      {% if regression == 'on' %}
+          <img src="/static/benchmark/images/{{idModelRunFeatures}}_pred_train.png" alt="mae" width="460" height="280">
+        </td>
+        <td style="padding:2px" width="50%" align="center">
+          <img src="/static/benchmark/images/{{idModelRunFeatures}}_pred_test.png" alt="mae" width="460" height="280">
+      {% else %}
+          {% for fileRaw in file_raw_list %}
+            {% if idSelected == fileRaw.id %}
+              {% for modelRunFeatures in model_run_features_list %}
+                {% if idModelRunFeatures == modelRunFeatures.id %}
+                  <img src="/static/benchmark/images/{{fileRaw.file_name}}.{{modelRunFeatures.method}}.{{modelRunFeatures.num_features}}.pca.png" alt="pca" width="660" height="680">
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+      {% endif %}
+        </td>
+      </tr>
+    </table>
+{% endif %}
+</div>
+</form>
+
+{% include 'benchmark/footer.html' %}
+{% endblock %}

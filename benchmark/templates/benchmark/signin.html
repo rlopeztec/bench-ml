@@ -1,0 +1,62 @@
+{% load static %}
+
+{% include 'benchmark/header.html' %}
+
+<body style="margin:8;padding:8;">
+<br> <br>
+<h2 align="center">Sign in with your username and password</h2>
+
+<br> <br>
+
+{% block content %}
+<form method="post" enctype="multipart/form-data" action="{% url 'benchmark:signin' %}">
+    {% csrf_token %}
+    <table align="center">
+      <tr align="center">
+        <td align="right">
+          <label for="username">Username/email: </label>
+          <div class="invalid-feedback">
+            Enter username
+          </div>
+        </td>
+        <td align="left">
+          <input type="text" id="username" name="username" value="lopezreneb@yahoo.com" required>
+          <div class="invalid-feedback">
+            Enter username
+          </div>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td align="right">
+          <label for="password">Password: </label>
+          <div class="invalid-feedback">
+            Enter password
+          </div>
+        </td>
+        <td align="left">
+          <input type="password" id="password" name="password" value="admin" required>
+          <div class="invalid-feedback">
+            Enter password
+          </div>
+        </td>
+      </tr>
+
+      <tr align="center">
+        <td align="center" colspan="2">
+          <div class="col-md-6 mb-3">
+          </div>
+          <div class="col-md-6 mb-3">
+            <button style="background-color: #4CAF50;" type="submit">Sign in</button>
+          </div>
+        </td>
+      </tr>
+      <tr align="center">
+        <td align="center" colspan="2">
+          {{message}}
+        </td>
+      </tr>
+    </table>
+</form>
+{% endblock %}
+

@@ -1,0 +1,16 @@
+
+//body {
+//    background: white url("images/background.jpg") no-repeat;
+//}
+li a {
+    color: green;
+}
+.carousel-item {
+  height: 65vh;
+  min-height: 350px;
+  background: no-repeat center center scroll;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}

@@ -1,0 +1,147 @@
+{% load static %}
+
+{% include 'benchmark/header.html' %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <body style="margin:8;padding:8;">
+    <br> <br>
+    <h3 align="left">Select a file to run a Machine Learning Model</h2>
+
+    {% if file_raw_list %}
+        <ul>
+        <table style="width:100%;padding:10px">
+          <tr>
+            <th style="padding:2px"></td>
+            <th style="padding:2px">ID</td>
+            <th style="padding:2px">FILE NAME</td>
+            <th style="padding:2px">FILE DESCRIPTION</td>
+            <th style="padding:2px">SCORING</td>
+            <th style="padding:2px"># OF FEATURES</td>
+            <th style="padding:2px">TRAIN</td>
+            <th style="padding:2px">TARGET</td>
+            <th style="padding:2px">CREATED DATE</td>
+          </tr>
+        {% for fileRaw in file_raw_list %}
+          <tr>
+            <td style="padding:2px">
+                <input type="radio" id="idSelected" name="idSelected" value="{{fileRaw.id}}" {% if request.session.idSelected == None or fileRaw.id == request.session.idSelected %} checked {% endif %}>
+            </td>
+            <td style="padding:2px">{{fileRaw.id}}</td>
+            <td style="padding:2px">{{fileRaw.file_name}}</td>
+            <td style="padding:2px">{{fileRaw.file_desc}}</td>
+            <td style="padding:2px">{{fileRaw.methods}}</td>
+            <td style="padding:2px">{{fileRaw.number_features}}</td>
+            <td style="padding:2px">{{fileRaw.percent_train}}%</td>
+            <td style="padding:2px">{{fileRaw.target_class}}</td>
+            <td style="padding:2px">{{fileRaw.pub_date}}</td>
+          </tr>
+        {% endfor %}
+        </table>
+        </ul>
+    {% else %}
+        <br><br>
+        <p>No files has been load and scored.</p>
+    {% endif %}
+
+    <br>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="model_ran">Select Model: </label>
+        <select id="model_ran" name="model_ran" onchange="changeSelect(this.value)" required>
+          <option value="FC" selected>Deep Learning Fully Connected</option>
+          <option value="Conv1D">Deep Learning Conv1D</option>
+          <option value="DT">Decision Tree</option>
+          <option value="RF">Random Forest</option>
+          <option value="SVM">Support Vector Machine</option>
+          <option value="GaussianNB">Gaussian Naive Bayes</option>
+        </select>
+        <div class="invalid-feedback">
+          Select models to run from these list: FC,Conv1D,DT,RF,DT,SVM
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="notes">Notes: </label>
+        <input type="text" id="notes" name="notes" value="model notes" size="50" required>
+        <div class="invalid-feedback">
+          Enter some notes about this model run
+        </div>
+      </div>
+    </div>
+
+    <div class="row" id="selectHTML">
+      <script>
+        changeSelect(document.getElementById("model_ran").value);
+      </script>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="epochs">Epochs: </label>
+        <input type="text" id="epochs" name="epochs" value="1000"  size="10" required>
+        <div class="invalid-feedback">
+          Enter number of epochs to run
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+            <button style="background-color: #4CAF50;" type="submit">Run Model</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <table width="100%">
+        <tr>
+          <td width="90%" id="selectOption">
+            <script>
+              changeOption(document.getElementById("model_ran").value);
+            </script>
+          </td>
+        </tr>
+      </table>
+    </div>
+{% endblock %}
+
+<br>
+<h3 align="left">Machine Learning Models already processed. Select one to see results</h2>
+
+{% if file_raw_list %}
+    <ul>
+    <table style="width:100%;padding:10px">
+      <tr>
+        <th width="2%" style="padding:2px"></td>
+        <th width="2%" style="padding:2px">ID</td>
+        <th width="2%" style="padding:2px">F.ID</td>
+        <th width="4%" style="padding:2px">MODEL</td>
+        <th width="20%" style="padding:2px">NOTES</td>
+        <th width="5%" style="padding:2px">EPOCHS</td>
+        <th width="5%" style="padding:2px">ACCURACY</td>
+        <th width="40%" style="padding:2px">PARAMETERS</td>
+        <th width="20%" style="padding:2px">CREATED DATE</td>
+      </tr>
+    {% for modelRun in model_run_list %}
+      <tr>
+        <td width="2%" style="padding:2px">
+            <input type="radio" id="id_model_run" name="id_model_run" value="{{modelRun.id}}" checked>
+        </td>
+        <td width="2%" style="padding:2px"><a href="{% url 'benchmark:evaluate' %}">{{ modelRun.id }}</a></td>
+        <td width="2%" style="padding:2px">{{modelRun.file_raw_id}}</td>
+        <td width="4%" style="padding:2px">{{modelRun.model_ran}}</td>
+        <td width="20%" style="padding:2px">{{modelRun.notes}}</td>
+        <td width="5%" style="padding:2px">{{modelRun.epochs}}</td>
+        <td width="5%" style="padding:2px">{{modelRun.weighted_accuracy|floatformat:4}}</td>
+        <td width="40%" style="padding:2px">{{parameters_list|getDictValue:modelRun.id}}</td>
+        <td width="20%" style="padding:2px">{{modelRun.pub_date}}</td>
+      </tr>
+    {% endfor %}
+    </table>
+    </ul>
+{% else %}
+    <br><br>
+    <p>No files has been scored.</p>
+{% endif %}
+
+</form>
+

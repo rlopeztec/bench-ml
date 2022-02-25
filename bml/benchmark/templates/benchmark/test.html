@@ -1,0 +1,56 @@
+{% load static %}
+
+{% include 'benchmark/header.html' %}
+
+<!DOCTYPE html>
+<html>
+<br>
+<br>
+<br>
+
+<link rel="stylesheet" type="text/css" href="{% static 'benchmark/style.css' %}">
+<!--link rel="stylesheet" type="text/css" href="{% static 'benchmark/bootstrap.min.css' %}"--!>
+
+<body style="text-align:center;">
+
+<table width="100%">
+<tr> <td> <div class="col-md-6 mb-3"> uno-1 <div class="help-tip"><p> Integers 1</p> </div> </div> </td>
+<td> uno-2 </td> </tr>
+
+<tr> <td> <div class="col-md-6 mb-3"> dos <div class="help-tip"><p> dos than 1</p> </div> </div> </td>
+<td> dos-2 </td>
+<td> <div class="col-md-6 mb-3"> dos-3 <div class="help-tip"><p> dos 2</p> </div> </div> </td>
+</tr>
+
+<tr> <td> <div class="col-md-6 mb-3"> tres <div class="help-tip"><p> tres 1</p> </div></div></td>
+<td> tres-2 </td> 
+<td> <div class="col-md-6 mb-3"> tres-3 <div class="help-tip"><p> tres 3</p> </div> </div> </td>
+</tr>
+
+<tr> <td> 4-1 <div class="tooltip">Hover over me <span class="tooltiptext">Tooltip 4-1.1</span> </div> </td>
+<td> 4-2 </td> 
+<td> 4-3 <div class="tooltip">Hover over me <span class="tooltiptext">Tooltip 4-3.1</span> </div> </td> 
+</tr>
+
+<tr> <td> <div class="col-md-6 mb-3"> 5-1
+<div class="tooltip">? <span class="tooltiptext">Tooltip 5-1.1</span> </div> 
+</div></td>
+<td> 5-2 </td> 
+<td> 5-3 <div class="tooltip">Hover over me <span class="tooltiptext">Tooltip 5-3.1</span> </div> </td> 
+</tr>
+</table>
+
+
+<body style="text-align:center;">
+
+	<h2>Tooltip</h2>
+	<p>Move the mouse over the text below:</p>
+
+	<div class="tooltip">Hover over me
+		  <span class="tooltiptext">Tooltip text</span>
+	</div>
+
+{% include 'benchmark/footer.html' %}
+
+</body>
+</html>
