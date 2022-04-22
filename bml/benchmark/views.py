@@ -22,6 +22,7 @@ from .models import Classification_Report, Confusion_Matrix, Web_User
 from .SplitTrainTest import SplitTrainTest
 from .ModelConv1D import ModelConv1D
 from .ModelFullyConnected import ModelFullyConnected
+from .ModelBNN import ModelBNN
 from .GaussianNaiveBayes import GaussianNaiveBayes
 from .DecisionTree import DecisionTree
 from .RandomForest import RandomForest
@@ -154,6 +155,14 @@ def specificModel(fileRaw, method, nFeats, modelRan, idModelRunFeatures, paramet
                         if modelRan == 'DT':
                             classifier = DecisionTree()
                             accuracyScore = classifier.runModel(idModelRunFeatures, fileName+'.train', fileName+'.test', parametersList, targetClass, True, fileRaw.id, benchmarkDir)
+                        else:
+                            if modelRan == 'BNN':
+                                classifier = ModelBNN()
+                                accuracyScore = classifier.runModel(idModelRunFeatures, fileName+'.train', fileName+'.test', parametersList, targetClass, True, fileRaw.id, benchmarkDir, fileRaw.regression)
+                            else:
+                                if modelRan == 'IBNN':
+                                    classifier = ModelBNN()
+                                    accuracyScore = classifier.runModel(idModelRunFeatures, fileName+'.train', fileName+'.test', parametersList, targetClass, True, fileRaw.id, benchmarkDir, fileRaw.regression)
     return accuracyScore,errorRateTrain, errorRateTest
 
 # save all posted parameters in run to session to remember them in run model

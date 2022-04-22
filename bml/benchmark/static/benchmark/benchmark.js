@@ -51,6 +51,8 @@ function validateNumber(field){
 
 function changeOption(idValue){
   switch (idValue) {
+    case 'BNN':
+    case 'IBNN':
     case 'FC':
       document.getElementById("selectOption").innerHTML = ''
         + '<table width="100%" style="margin-left:14px;">'
@@ -244,7 +246,7 @@ function changeSelect(idValue){
       } else {
         hearlystop="25"
       }
-  if (['FC'].includes(idValue)) {
+  if (['FC'].includes(idValue) || ['BNN'].includes(idValue) || ['IBNN'].includes(idValue)) {
       document.getElementById("selectHTML").innerHTML = ''
         + '<table width="100%">'
         + '<tr>'

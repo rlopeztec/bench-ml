@@ -107,6 +107,8 @@
           <select id="model_ran" name="model_ran" onchange="changeSelect(this.value)" required>
             <option value="FC" {% if request.session.model_ran == 'FC' %} selected {% endif %}>DL Fully Connected</option>
             <option value="Conv1D" {% if request.session.model_ran == 'Conv1D' %} selected {% endif %}>DL Conv1D</option>
+            <option value="BNN" {% if request.session.model_ran == 'BNN' %} selected {% endif %}>DL BP Theory</option>
+            <option value="IBNN" {% if request.session.model_ran == 'IBNN' %} selected {% endif %}>DL BP Improved</option>
             <option value="DT" {% if request.session.model_ran == 'DT' %} selected {% endif %}>Decision Tree</option>
 	    <option value="RF" {% if request.session.model_ran == 'RF' %} selected {% endif %}>Random Forest</option>
 	    <option value="SVM" {% if request.session.model_ran == 'SVM' %} selected {% endif %}>Support Vector Machine</option>

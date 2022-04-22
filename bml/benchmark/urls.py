@@ -4,6 +4,7 @@ from . import views
 
 app_name = 'benchmark'
 urlpatterns = [
+
     path('', views.IndexView.as_view(), name='index'),
 
     path('score/', views.score, name='score'),

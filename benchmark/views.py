@@ -24,6 +24,7 @@ from .SplitTrainTest import SplitTrainTest
 from .pca_filter_features import readGenesScoringFile, readHeadersFile, readInputFile
 from .ModelConv1D import ModelConv1D
 from .ModelFullyConnected import ModelFullyConnected
+from .ModelBNN import ModelBNN
 from .GaussianNaiveBayes import GaussianNaiveBayes
 from .DecisionTree import DecisionTree
 from .RandomForest import RandomForest
@@ -157,6 +158,10 @@ def specificModel(fileRaw, method, nFeats, modelRan, idModelRunFeatures, paramet
                         if modelRan == 'DT':
                             classifier = DecisionTree()
                             accuracyScore = classifier.runModel(idModelRunFeatures, fileName+'.train', fileName+'.test', parametersList, epochs, targetClass, True, fileRaw.id)
+                        else:
+                            if modelRan == 'BNN':
+                                classifier = ModelBNN()
+                                accuracyScore = classifier.runModel(idModelRunFeatures, fileName+'.train', fileName+'.test', parametersList, epochs, targetClass, True, fileRaw.id)
     return accuracyScore
 
 # run ML model

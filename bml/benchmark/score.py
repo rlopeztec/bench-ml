@@ -52,7 +52,8 @@ def methods(filename, fileType, numFeatures, scoringMethods, targetClass, dataTy
 
             # create genes files in single line in tsv format to be used in pca (pca_filter_features.py)
             headersGenes, dimNames, xSeqs, ycols = pca_filter_features.readHeadersFile(filename, topGenes, featFile+'.genes', fileType, dataType, targetClass, dimNames, xSeqs, ycols)
-            print('after HeadersFile:', filename, len(headersGenes), len(dimNames), len(xSeqs), ycols.shape, datetime.now().strftime("%Y/%m/%d %H:%M:%S"),file=sys.stderr)
+            #print('after HeadersFile:', filename, len(headersGenes), len(dimNames), len(xSeqs), ycols.shape, datetime.now().strftime("%Y/%m/%d %H:%M:%S"),file=sys.stderr)
+            print('after HeadersFile:', filename, len(headersGenes), len(dimNames), datetime.now().strftime("%Y/%m/%d %H:%M:%S"),file=sys.stderr)
 
             # creates features file with target class and features selected  (pca_filter_features.py)
             #TODO RENE REVIEW MEMORY OMITTING 3 READS ON SAME FILE: SCORING, HEADERS, INPUTFILE
