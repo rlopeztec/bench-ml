@@ -1,23 +1,14 @@
-# from here https://www.tensorflow.org/tutorials/images/cnn
+# our own implementation of neural networks with backpropagation
+
 import argparse
-from tensorflow.keras.backend import name_scope
-from tensorflow.keras import datasets, layers, models, backend
 from .ClassificationReport import ClassificationReport
 from .ConfusionMatrix import ConfusionMatrix
 from .Utils import Utils
 
-#with name_scope('INIT'):
-# deep learning benchmark
-#RENE HOW TO DO THIS??? %load_ext tensorboard
 import datetime
 import pandas as pd
 import numpy as np
 from django.utils import timezone
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Conv2D, Conv1D, Dropout
-from tensorflow.keras.optimizers import Adadelta,Adagrad,Adam,Adamax,Ftrl,Nadam,RMSprop,SGD
-from tensorflow.keras.callbacks import TensorBoard, EarlyStopping
-from tensorflow.keras.layers import Flatten, MaxPool2D, MaxPooling2D, MaxPooling1D
 import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.utils import to_categorical
@@ -25,17 +16,280 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
-
-#backend.clear_session()
-
 from .models import Classification_Report, Confusion_Matrix
+
+# from our implementation
+from random import seed
+from random import randrange
+from random import random
+from csv import reader
+from math import exp
 
 class ModelBNN:
 
+    # Load CSV file
+    def load_csv(filename):
+        dataset = list()
+        with open(filename, 'r') as file:
+            csv_reader = reader(file)
+            for row in csv_reader:
+                if not row:
+                    continue
+                dataset.append(row)
+        return dataset
+
+    # Convert string column to float
+    def str_column_to_float(dataset, column):
+        for row in dataset:
+            row[column] = float(row[column].strip())
+
+    # Convert string column to integer
+    def str_column_to_int(dataset, column):
+        print(len(dataset), column)
+        class_values = [row[column] for row in dataset]
+        print('class values', len(class_values))
+        unique = set(class_values)
+        print('unique class values', len(unique))
+        lookup = dict()
+        for i, value in enumerate(unique):
+            lookup[value] = i
+        print('lookup', len(lookup))
+        for row in dataset:
+            row[column] = lookup[row[column]]
+        print('dataset', len(dataset))
+        return lookup
+
+    # Find the min and max values for each column
+    def dataset_minmax(dataset):
+        return [[min(column), max(column)] for column in zip(*dataset)]
+
+    # Rescale dataset columns to the range 0-1
+    def normalize_dataset(dataset, minmax):
+        for row in dataset:
+            for i in range(len(row)-1):
+                row[i] = (row[i] - minmax[i][0]) / (minmax[i][1] - minmax[i][0])
+
+    # Split a dataset into k folds
+    def cross_validation_split(dataset, n_folds):
+        dataset_split = list()
+        dataset_copy = list(dataset)
+        fold_size = int(len(dataset) / n_folds)
+        for _ in range(n_folds):
+            fold = list()
+            while len(fold) < fold_size:
+                index = randrange(len(dataset_copy))
+                fold.append(dataset_copy.pop(index))
+            dataset_split.append(fold)
+        return dataset_split
+
+    # Calculate accuracy percentage
+    def accuracy_metric(actual, predicted):
+        correct = 0
+        for i in range(len(actual)):
+            if actual[i] == predicted[i]:
+                correct += 1
+        return correct / float(len(actual)) * 100.0
+
+    # Evaluate an algorithm using a cross validation split
+    def evaluate_algorithm(debug, dataset, algorithm, n_folds, l_rate, n_epoch, n_hidden, hidden_layers):
+        folds = cross_validation_split(dataset, n_folds)
+        scores = list()
+        for fold in folds:
+            train_set = list(folds)
+            train_set.remove(fold)
+            train_set = sum(train_set, [])
+            test_set = list()
+            for row in fold:
+                row_copy = list(row)
+                test_set.append(row_copy)
+                row_copy[-1] = None
+            predicted = algorithm(debug, train_set, test_set, l_rate, n_epoch, n_hidden, hidden_layers)
+            actual = [row[-1] for row in fold]
+            accuracy = accuracy_metric(actual, predicted)
+            scores.append(accuracy)
+        return scores
+
+    # Calculate neuron activation for an input
+    def activate(debug, weights, inputs):
+        activation = weights[-1]
+        if debug:
+            print('activation', activation)
+        for i in range(len(weights)-1):
+            if debug:
+                print('i', i)
+                print('weights', weights)
+                print('weights[i]', weights[i])
+                print('inputs', inputs)
+                print('inputs[i]', inputs[i])
+            activation += weights[i] * inputs[i]
+        return activation
+
+    # Transfer neuron activation (TODO: pass as a parameter)
+    # TODO: could be different for each layer
+    def transfer(activation):
+        return 1.0 / (1.0 + exp(-activation))
+
+    # Forward propagate input to a network output
+    # TODO: print weights, neurons and result of activation function
+    # TODO: then design how it could work with several layers
+    # TODO: and test in backward propagation
+    def forward_propagate(debug, network, row):
+        inputs = row
+        if debug:
+            print('row/inputs', inputs)
+            print('network', network)
+        for layer in network:
+            if debug:
+                print('network -> layer', layer)
+            new_inputs = []
+            for neuron in layer:
+                if debug:
+                    print('layer -> neuron', neuron)
+                    print('layer -> neuron weights', neuron['weights'])
+                activation = activate(debug, neuron['weights'], inputs)
+                # activation function could be different for each layer
+                neuron['output'] = transfer(activation)
+                new_inputs.append(neuron['output'])
+            inputs = new_inputs
+        return inputs
+
+    # Calculate the derivative of an neuron output
+    def transfer_derivative(output):
+        return output * (1.0 - output)
+
+    # Backpropagate error and store in neurons
+    def backward_propagate_error(network, expected):
+        for i in reversed(range(len(network))):
+            layer = network[i]
+            errors = list()
+            if i != len(network)-1:
+                for j in range(len(layer)):
+                    error = 0.0
+                    for neuron in network[i + 1]:
+                        error += (neuron['weights'][j] * neuron['delta'])
+                    errors.append(error)
+            else:
+                for j in range(len(layer)):
+                    neuron = layer[j]
+                    errors.append(expected[j] - neuron['output'])
+            for j in range(len(layer)):
+                neuron = layer[j]
+                neuron['delta'] = errors[j] * transfer_derivative(neuron['output'])
+
+    # Update network weights with error
+    def update_weights(network, row, l_rate):
+        #print('len network', len(network), 'layers')
+        #print('len network 0', len(network[0]), 'nodes in hidden layer')
+        #print('len network 1', len(network[1]), 'nodes in output layer')
+        for i in range(len(network)):
+            inputs = row[:-1]
+            if i != 0:
+                inputs = [neuron['output'] for neuron in network[i - 1]]
+            for neuron in network[i]:
+                for j in range(len(inputs)):
+                    #print('len neuron', len(neuron))
+                    #print('len neuron weights', len(neuron['weights']))
+                    #print('len inputs', len(inputs))
+                    #print('j', j)
+                    neuron['weights'][j] += l_rate * neuron['delta'] * inputs[j]
+                neuron['weights'][-1] += l_rate * neuron['delta']
+
+    # Train a network for a fixed number of epochs
+    def train_network(debug, network, train, l_rate, n_epoch, n_outputs):
+        for _ in range(n_epoch):
+            for row in train:
+                forward_propagate(debug, network, row)
+                expected = [0 for i in range(n_outputs)]
+                expected[row[-1]] = 1
+                backward_propagate_error(network, expected)
+                update_weights(network, row, l_rate)
+
+    # Initialize a network
+    def initialize_network(n_inputs, n_hidden, n_outputs, hidden_layers):
+        #print('n inputs', n_inputs)
+        #print('n hidden', n_hidden)
+        network = list()
+        hidden_layer = [{'weights':[random() for i in range(n_inputs + 1)]} for i in range(n_hidden[0])]
+        network.append(hidden_layer)
+        for i in range(hidden_layers-1):
+            #print('i, i+1', i, i+1)
+            #print('n_hidden(i+1)', n_hidden[i+1])
+            hidden_layer = [{'weights':[random() for k in range(n_hidden[i] + 1)]} for j in range(n_hidden[i+1])]
+            #print('pass 2')
+            #print(hidden_layer)
+            network.append(hidden_layer)
+        output_layer = [{'weights':[random() for k in range(n_hidden[len(n_hidden)-1] + 1)]} for j in range(n_outputs)]
+        network.append(output_layer)
+        return network
+
+    # Make a prediction with a network
+    def predict(debug, network, row):
+        outputs = forward_propagate(debug, network, row)
+        return outputs.index(max(outputs))
+
+    # Backpropagation Algorithm With Stochastic Gradient Descent
+    def back_propagation(debug, train, test, l_rate, n_epoch, n_hidden, hidden_layers):
+        n_inputs = len(train[0]) - 1
+        n_outputs = len(set([row[-1] for row in train]))
+        network = initialize_network(n_inputs, n_hidden, n_outputs, hidden_layers)
+        if debug:
+            print('len network', len(network), 'layers')
+            for i in range(len(network)):
+                print('len network', i, len(network[i]), 'nodes in layer')
+        train_network(debug, network, train, l_rate, n_epoch, n_outputs)
+        predictions = list()
+        for row in test:
+            prediction = predict(debug, network, row)
+            predictions.append(prediction)
+        if debug:
+            print('len train', len(train), 'rows in training set')
+            print('len train 0', len(train[0]), '7 features + 1 label')
+            print('len test', len(test), 'rows in test set')
+            print('n inputs', n_inputs, 'features')
+            print('n outputs', n_outputs, 'different values in output')
+            print('len predictions', len(predictions), 'in test set')
+            print('len network', len(network), 'layers')
+            for i in range(len(network)):
+                print('len network', i, len(network[i]), 'nodes in layer')
+            #print('network', network)
+            #print('train', train)
+            print('')
+        return(predictions)
+
+
     def runModel(self, idModelRunFeatures, trainInput, testInput, parametersList, targetClass='Outcome', saveDb=False, idFileRaw=None, benchmarkDir='benchmark', regression='off'):
+        # out backpropagation method
+        seed(1)
+        # load and prepare data
+        filename = 'seeds_dataset.csv'
+        dataset = load_csv(filename)
+        print(type(dataset), len(dataset))
+
+        for i in range(len(dataset[0])-1):
+            str_column_to_float(dataset, i)
+
+        # convert class column to integers
+        str_column_to_int(dataset, len(dataset[0])-1)
+
+        # normalize input variables
+        minmax = dataset_minmax(dataset)
+
+        # normalize input variables
+        normalize_dataset(dataset, minmax)
+
+        # evaluate algorithm
+        n_folds = 5
+        l_rate = 0.3
+        n_epoch = 50
+        n_hidden = [5] # number of nodes in the unique hidden layer
+        hidden_layers = 1 # adding number of hidden layers
+        scores = evaluate_algorithm(False, dataset, back_propagation, n_folds, l_rate, n_epoch, n_hidden, hidden_layers)
+        print('Scores: %s' % scores)
+        print('Mean Accuracy(of %i): %.3f%%' % (len(scores), sum(scores)/float(len(scores))))
+
+        '''
         # deep learning benchmark
         print('ModelBNN.runModel', trainInput, testInput, parametersList, targetClass, saveDb, idFileRaw)
-        #with name_scope('SETUP'):
         df = pd.read_csv(trainInput, delimiter='\t')
         dfTest = pd.read_csv(testInput, delimiter='\t')
         sc = StandardScaler()
@@ -66,7 +320,6 @@ class ModelBNN:
         print('in_shape', in_shape, n_classes)
 
         # input data: (batch_size, height, width, depth)
-        #with name_scope('MODEL'):
         model = Sequential()
 
         # playing with NN
@@ -136,11 +389,9 @@ class ModelBNN:
 
         print(model.summary())
 
-        #with name_scope('CALLBACK'):
         #log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         #tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-        #with name_scope('FIT'):
         
         # if regression case like TCGA survival data
         if regression == 'on':
@@ -164,15 +415,12 @@ class ModelBNN:
         # modelLoss = pd.DataFrame(history.history)
         # modelLoss.plot()
 
-        #with name_scope('PREDICT'):
         y_pred = model.predict(X_test)
 
-        #with name_scope('SERIES_NOTHING'):
         y_test_class = np.argmax(y_test, axis=1)
         y_pred_class = np.argmax(y_pred, axis=1)
         #print(pd.Series(y_test_class).value_counts() / len(y_test_class))
 
-        #with name_scope('ACCURACY'):
         accuracyScore = accuracy_score(y_test_class, y_pred_class)
         print("Accuracy score: {:0.3}".format(accuracyScore))
 
@@ -183,6 +431,7 @@ class ModelBNN:
         if saveDb:
             ClassificationReport.saveClassificationReport(self,idModelRunFeatures, classificationReport)
             ConfusionMatrix.saveConfusionMatrix(self,idModelRunFeatures, confusionMatrix)
+        '''
 
         return accuracyScore
 
