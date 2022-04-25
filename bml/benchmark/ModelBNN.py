@@ -28,7 +28,7 @@ from math import exp
 class ModelBNN:
 
     # Load CSV file
-    def load_csv(filename):
+    def load_csv(self, filename):
         dataset = list()
         with open(filename, 'r') as file:
             csv_reader = reader(file)
@@ -39,12 +39,12 @@ class ModelBNN:
         return dataset
 
     # Convert string column to float
-    def str_column_to_float(dataset, column):
+    def str_column_to_float(self, dataset, column):
         for row in dataset:
             row[column] = float(row[column].strip())
 
     # Convert string column to integer
-    def str_column_to_int(dataset, column):
+    def str_column_to_int(self, dataset, column):
         print(len(dataset), column)
         class_values = [row[column] for row in dataset]
         print('class values', len(class_values))
@@ -60,17 +60,17 @@ class ModelBNN:
         return lookup
 
     # Find the min and max values for each column
-    def dataset_minmax(dataset):
+    def dataset_minmax(self, dataset):
         return [[min(column), max(column)] for column in zip(*dataset)]
 
     # Rescale dataset columns to the range 0-1
-    def normalize_dataset(dataset, minmax):
+    def normalize_dataset(self, dataset, minmax):
         for row in dataset:
             for i in range(len(row)-1):
                 row[i] = (row[i] - minmax[i][0]) / (minmax[i][1] - minmax[i][0])
 
     # Split a dataset into k folds
-    def cross_validation_split(dataset, n_folds):
+    def cross_validation_split(self, dataset, n_folds):
         dataset_split = list()
         dataset_copy = list(dataset)
         fold_size = int(len(dataset) / n_folds)
@@ -83,7 +83,7 @@ class ModelBNN:
         return dataset_split
 
     # Calculate accuracy percentage
-    def accuracy_metric(actual, predicted):
+    def accuracy_metric(self, actual, predicted):
         correct = 0
         for i in range(len(actual)):
             if actual[i] == predicted[i]:
@@ -91,8 +91,8 @@ class ModelBNN:
         return correct / float(len(actual)) * 100.0
 
     # Evaluate an algorithm using a cross validation split
-    def evaluate_algorithm(debug, dataset, algorithm, n_folds, l_rate, n_epoch, n_hidden, hidden_layers):
-        folds = cross_validation_split(dataset, n_folds)
+    def evaluate_algorithm(self, debug, dataset, algorithm, n_folds, l_rate, n_epoch, n_hidden, hidden_layers):
+        folds = self.cross_validation_split(dataset, n_folds)
         scores = list()
         for fold in folds:
             train_set = list(folds)
@@ -105,12 +105,12 @@ class ModelBNN:
                 row_copy[-1] = None
             predicted = algorithm(debug, train_set, test_set, l_rate, n_epoch, n_hidden, hidden_layers)
             actual = [row[-1] for row in fold]
-            accuracy = accuracy_metric(actual, predicted)
+            accuracy = self.accuracy_metric(actual, predicted)
             scores.append(accuracy)
         return scores
 
     # Calculate neuron activation for an input
-    def activate(debug, weights, inputs):
+    def activate(self, debug, weights, inputs):
         activation = weights[-1]
         if debug:
             print('activation', activation)
@@ -126,14 +126,14 @@ class ModelBNN:
 
     # Transfer neuron activation (TODO: pass as a parameter)
     # TODO: could be different for each layer
-    def transfer(activation):
+    def transfer(self, activation):
         return 1.0 / (1.0 + exp(-activation))
 
     # Forward propagate input to a network output
     # TODO: print weights, neurons and result of activation function
     # TODO: then design how it could work with several layers
     # TODO: and test in backward propagation
-    def forward_propagate(debug, network, row):
+    def forward_propagate(self, debug, network, row):
         inputs = row
         if debug:
             print('row/inputs', inputs)
@@ -146,19 +146,19 @@ class ModelBNN:
                 if debug:
                     print('layer -> neuron', neuron)
                     print('layer -> neuron weights', neuron['weights'])
-                activation = activate(debug, neuron['weights'], inputs)
+                activation = self.activate(debug, neuron['weights'], inputs)
                 # activation function could be different for each layer
-                neuron['output'] = transfer(activation)
+                neuron['output'] = self.transfer(activation)
                 new_inputs.append(neuron['output'])
             inputs = new_inputs
         return inputs
 
     # Calculate the derivative of an neuron output
-    def transfer_derivative(output):
+    def transfer_derivative(self, output):
         return output * (1.0 - output)
 
     # Backpropagate error and store in neurons
-    def backward_propagate_error(network, expected):
+    def backward_propagate_error(self, network, expected):
         for i in reversed(range(len(network))):
             layer = network[i]
             errors = list()
@@ -174,10 +174,10 @@ class ModelBNN:
                     errors.append(expected[j] - neuron['output'])
             for j in range(len(layer)):
                 neuron = layer[j]
-                neuron['delta'] = errors[j] * transfer_derivative(neuron['output'])
+                neuron['delta'] = errors[j] * self.transfer_derivative(neuron['output'])
 
     # Update network weights with error
-    def update_weights(network, row, l_rate):
+    def update_weights(self, network, row, l_rate):
         #print('len network', len(network), 'layers')
         #print('len network 0', len(network[0]), 'nodes in hidden layer')
         #print('len network 1', len(network[1]), 'nodes in output layer')
@@ -195,17 +195,17 @@ class ModelBNN:
                 neuron['weights'][-1] += l_rate * neuron['delta']
 
     # Train a network for a fixed number of epochs
-    def train_network(debug, network, train, l_rate, n_epoch, n_outputs):
+    def train_network(self, debug, network, train, l_rate, n_epoch, n_outputs):
         for _ in range(n_epoch):
             for row in train:
-                forward_propagate(debug, network, row)
+                self.forward_propagate(debug, network, row)
                 expected = [0 for i in range(n_outputs)]
                 expected[row[-1]] = 1
-                backward_propagate_error(network, expected)
-                update_weights(network, row, l_rate)
+                self.backward_propagate_error(network, expected)
+                self.update_weights(network, row, l_rate)
 
     # Initialize a network
-    def initialize_network(n_inputs, n_hidden, n_outputs, hidden_layers):
+    def initialize_network(self, n_inputs, n_hidden, n_outputs, hidden_layers):
         #print('n inputs', n_inputs)
         #print('n hidden', n_hidden)
         network = list()
@@ -223,23 +223,23 @@ class ModelBNN:
         return network
 
     # Make a prediction with a network
-    def predict(debug, network, row):
-        outputs = forward_propagate(debug, network, row)
+    def predict(self, debug, network, row):
+        outputs = self.forward_propagate(debug, network, row)
         return outputs.index(max(outputs))
 
     # Backpropagation Algorithm With Stochastic Gradient Descent
-    def back_propagation(debug, train, test, l_rate, n_epoch, n_hidden, hidden_layers):
+    def back_propagation(self, debug, train, test, l_rate, n_epoch, n_hidden, hidden_layers):
         n_inputs = len(train[0]) - 1
         n_outputs = len(set([row[-1] for row in train]))
-        network = initialize_network(n_inputs, n_hidden, n_outputs, hidden_layers)
+        network = self.initialize_network(n_inputs, n_hidden, n_outputs, hidden_layers)
         if debug:
             print('len network', len(network), 'layers')
             for i in range(len(network)):
                 print('len network', i, len(network[i]), 'nodes in layer')
-        train_network(debug, network, train, l_rate, n_epoch, n_outputs)
+        self.train_network(debug, network, train, l_rate, n_epoch, n_outputs)
         predictions = list()
         for row in test:
-            prediction = predict(debug, network, row)
+            prediction = self.predict(debug, network, row)
             predictions.append(prediction)
         if debug:
             print('len train', len(train), 'rows in training set')
@@ -261,21 +261,20 @@ class ModelBNN:
         # out backpropagation method
         seed(1)
         # load and prepare data
-        filename = 'seeds_dataset.csv'
-        dataset = load_csv(filename)
+        dataset = self.load_csv(trainInput)
         print(type(dataset), len(dataset))
 
         for i in range(len(dataset[0])-1):
-            str_column_to_float(dataset, i)
+            self.str_column_to_float(dataset, i)
 
         # convert class column to integers
-        str_column_to_int(dataset, len(dataset[0])-1)
+        self.str_column_to_int(dataset, len(dataset[0])-1)
 
         # normalize input variables
-        minmax = dataset_minmax(dataset)
+        minmax = self.dataset_minmax(dataset)
 
         # normalize input variables
-        normalize_dataset(dataset, minmax)
+        self.normalize_dataset(dataset, minmax)
 
         # evaluate algorithm
         n_folds = 5
@@ -283,132 +282,12 @@ class ModelBNN:
         n_epoch = 50
         n_hidden = [5] # number of nodes in the unique hidden layer
         hidden_layers = 1 # adding number of hidden layers
-        scores = evaluate_algorithm(False, dataset, back_propagation, n_folds, l_rate, n_epoch, n_hidden, hidden_layers)
+        scores = self.evaluate_algorithm(False, dataset, self.back_propagation, n_folds, l_rate, n_epoch, n_hidden, hidden_layers)
         print('Scores: %s' % scores)
+        accuracyScore = sum(scores)/float(len(scores))
         print('Mean Accuracy(of %i): %.3f%%' % (len(scores), sum(scores)/float(len(scores))))
 
         '''
-        # deep learning benchmark
-        print('ModelBNN.runModel', trainInput, testInput, parametersList, targetClass, saveDb, idFileRaw)
-        df = pd.read_csv(trainInput, delimiter='\t')
-        dfTest = pd.read_csv(testInput, delimiter='\t')
-        sc = StandardScaler()
-
-        X_train = sc.fit_transform(df.drop(targetClass, axis=1))
-        y_train_tmp = df[targetClass].values
-
-        # convert list from string to integer
-        y_train_tmp,foundList = Utils.convertToIntegers(self, y_train_tmp, True, idFileRaw, {})
-        y_train = to_categorical(y_train_tmp)
-
-        X_test = sc.fit_transform(dfTest.drop(targetClass, axis=1))
-        y_test_tmp = dfTest[targetClass].values
-        y_test_tmp,foundList = Utils.convertToIntegers(self, y_test_tmp, True, idFileRaw, foundList)
-
-        #i didn't have it but needed for non-regression cases
-        y_test = to_categorical(y_test_tmp)
-
-        print('X_train.shape', X_train.shape)
-        print('y_train.shape', y_train.shape)
-        print('X_test.shape', X_test.shape)
-        print('y_test.shape', y_test.shape)
-        print(y_train_tmp)
-
-        in_shape = X_train.shape[1:]
-        n_classes = len(np.unique(y_train_tmp))
-        print('np.unique', np.unique(y_train_tmp))
-        print('in_shape', in_shape, n_classes)
-
-        # input data: (batch_size, height, width, depth)
-        model = Sequential()
-
-        # playing with NN
-        if parametersList['model_option'] == '1':
-            print('OPTIONNNNNNNNNNNN 1')
-            model.add(Dense(parametersList['filters'], input_shape=in_shape, activation=parametersList['activation'], name='CL1'))
-            if float(parametersList['dropout']) > 0:
-                model.add(Dropout(float(parametersList['dropout'])))
-            model.add(Dense(int(int(parametersList['filters'])/2), activation=parametersList['activation'], name='CL2'))
-            if float(parametersList['dropout']) > 0:
-                model.add(Dropout(float(parametersList['dropout'])))
-
-        if parametersList['model_option'] == '2':
-            print('OPTIONNNNNNNNNNNN 2')
-            model.add(Dense(parametersList['filters'], input_shape=in_shape, activation=parametersList['activation'], name='CL1'))
-            if float(parametersList['dropout']) > 0:
-                model.add(Dropout(float(parametersList['dropout'])))
-            model.add(Dense(int(int(parametersList['filters'])/2), activation=parametersList['activation'], name='CL2'))
-            if float(parametersList['dropout']) > 0:
-                model.add(Dropout(float(parametersList['dropout'])))
-            model.add(Dense(int(int(parametersList['filters'])/4), activation=parametersList['activation']))
-            if float(parametersList['dropout']) > 0:
-                model.add(Dropout(float(parametersList['dropout'])))
-            model.add(Dense(int(int(parametersList['filters'])/6), activation=parametersList['activation']))
-            if float(parametersList['dropout']) > 0:
-                model.add(Dropout(float(parametersList['dropout'])))
-
-        if parametersList['model_option'] == '3':
-            print('OPTIONNNNNNNNNNNN 3')
-            model.add(Dense(parametersList['filters'], input_shape=in_shape, activation=parametersList['activation'], name='CL1'))
-            if float(parametersList['dropout']) > 0:
-                model.add(Dropout(float(parametersList['dropout'])))
-            model.add(Dense(int(int(parametersList['filters'])/2), activation=parametersList['activation'], name='CL2'))
-            if float(parametersList['dropout']) > 0:
-                model.add(Dropout(float(parametersList['dropout'])))
-            model.add(Dense(int(int(parametersList['filters'])/4), activation=parametersList['activation']))
-            if float(parametersList['dropout']) > 0:
-                model.add(Dropout(float(parametersList['dropout'])))
-            model.add(Dense(int(int(parametersList['filters'])/6), activation=parametersList['activation']))
-            if float(parametersList['dropout']) > 0:
-                model.add(Dropout(float(parametersList['dropout'])))
-            model.add(Dense(int(int(parametersList['filters'])/8), activation=parametersList['activation']))
-            if float(parametersList['dropout']) > 0:
-                model.add(Dropout(float(parametersList['dropout'])))
-            model.add(Dense(int(int(parametersList['filters'])/10), activation=parametersList['activation']))
-            if float(parametersList['dropout']) > 0:
-                model.add(Dropout(float(parametersList['dropout'])))
-
-        if parametersList['model_option'] == '4':
-            print('OPTIONNNNNNNNNNNN 4')
-            model.add(Dense(parametersList['filters'], input_shape=in_shape, activation=parametersList['activation'], name='CL1'))
-            model.add(Dropout(float(parametersList['dropout'])))
-            model.add(Dense(int(int(parametersList['filters'])/2), activation=parametersList['activation'], name='CL2'))
-            model.add(Dropout(float(parametersList['dropout'])))
-            model.add(Dense(int(int(parametersList['filters'])/4), activation=parametersList['activation']))
-            model.add(Dropout(float(parametersList['dropout'])))
-
-        # if regression case like TCGA survival data
-        if regression == 'on':
-            model.add(Dense(1, activation='linear', name='CL3'))
-        else:
-            model.add(Dense(n_classes, activation=parametersList['activation_output'], name='CL3'))
-
-        model.compile(globals()[parametersList['optimizer']](lr=float(parametersList['learning_rate'])),
-                      loss=parametersList['loss'],
-                      metrics=['accuracy'])
-
-        print(model.summary())
-
-        #log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        #tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
-
-        
-        # if regression case like TCGA survival data
-        if regression == 'on':
-            w_y_train = y_train_tmp
-        else:
-            w_y_train = y_train
-
-        #TODO RENE early stopping options are auto, min and max, maybe implement it later?
-        earlyStop = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=int(parametersList['earlystop']))
-
-        if float(parametersList['earlystop']) > 0:
-            #history = model.fit(X_train, y_train, epochs=int(parametersList['epochs']), verbose=2, validation_split=0.2, callbacks=[earlyStop, tensorboard_callback])
-            history = model.fit(X_train, w_y_train, epochs=int(parametersList['epochs']), verbose=2, validation_split=0.2, callbacks=[earlyStop])
-        else:
-            #history = model.fit(X_train, y_train, epochs=int(parametersList['epochs']), verbose=2, validation_split=0.2, callbacks=[tensorboard_callback])
-            history = model.fit(X_train, w_y_train, epochs=int(parametersList['epochs']), verbose=2, validation_split=0.2)
-
         Utils.saveImages(self, benchmarkDir+'/static/benchmark/images/'+ str(idModelRunFeatures) + '_accuracy.png', history, 'accuracy', 'val_accuracy')
         Utils.saveImages(self, benchmarkDir+'/static/benchmark/images/'+ str(idModelRunFeatures) + '_loss.png', history, 'loss', 'val_loss')
         # alternatively for plotting use:
