@@ -116,7 +116,7 @@ def buildPcaImage(inputFile, genesFile, outputFile, targetClass):
         ax.set_xlabel('Principal Component 1', fontsize = 15)
         ax.set_ylabel('Principal Component 2', fontsize = 15)
         ax.set_zlabel('Principal Component 3', fontsize = 15)
-        ax.set_title('Tissues', fontsize = 20)
+        ax.set_title('Classes', fontsize = 20)
         #print('YYYYYYYYYYYY', len(y), len(colors), len(targets))
         for target, color in zip(targets,colors):
             indicesToKeep = finalDf[targetClass] == target

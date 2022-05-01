@@ -1,6 +1,6 @@
 # our own implementation of neural networks with backpropagation
 
-import argparse
+import sys, argparse
 from .ClassificationReport import ClassificationReport
 from .ConfusionMatrix import ConfusionMatrix
 from .Utils import Utils
@@ -12,6 +12,7 @@ from django.utils import timezone
 import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.losses import CategoricalCrossentropy
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
@@ -31,12 +32,17 @@ class ModelBNN:
     def load_csv(self, filename):
         dataset = list()
         with open(filename, 'r') as file:
-            csv_reader = reader(file)
+            csv_reader = reader(file, delimiter='\t')
+            first = True
             for row in csv_reader:
-                if not row:
-                    continue
-                dataset.append(row)
-        return dataset
+                if first:
+                    headers = row
+                    first = False
+                else:
+                    if not row:
+                        continue
+                    dataset.append(row)
+        return headers, dataset
 
     # Convert string column to float
     def str_column_to_float(self, dataset, column):
@@ -94,6 +100,7 @@ class ModelBNN:
     def evaluate_algorithm(self, debug, dataset, algorithm, n_folds, l_rate, n_epoch, n_hidden, hidden_layers):
         folds = self.cross_validation_split(dataset, n_folds)
         scores = list()
+        list_loss = []
         for fold in folds:
             train_set = list(folds)
             train_set.remove(fold)
@@ -103,11 +110,11 @@ class ModelBNN:
                 row_copy = list(row)
                 test_set.append(row_copy)
                 row_copy[-1] = None
-            predicted = algorithm(debug, train_set, test_set, l_rate, n_epoch, n_hidden, hidden_layers)
+            predicted, list_loss = algorithm(debug, train_set, test_set, l_rate, n_epoch, n_hidden, hidden_layers)
             actual = [row[-1] for row in fold]
             accuracy = self.accuracy_metric(actual, predicted)
             scores.append(accuracy)
-        return scores
+        return scores, list_loss
 
     # Calculate neuron activation for an input
     def activate(self, debug, weights, inputs):
@@ -124,7 +131,7 @@ class ModelBNN:
             activation += weights[i] * inputs[i]
         return activation
 
-    # Transfer neuron activation (TODO: pass as a parameter)
+    # Transfer neuron activation sigmoid function (TODO: pass as a parameter)
     # TODO: could be different for each layer
     def transfer(self, activation):
         return 1.0 / (1.0 + exp(-activation))
@@ -194,15 +201,36 @@ class ModelBNN:
                     neuron['weights'][j] += l_rate * neuron['delta'] * inputs[j]
                 neuron['weights'][-1] += l_rate * neuron['delta']
 
+
+    # evaluate loss function, expected vs predicted outputs
+    def evaluate_loss_function(self, expected, predicted):
+        cce = CategoricalCrossentropy()
+        loss_result = cce(expected, predicted).numpy()
+        return loss_result
+
+
     # Train a network for a fixed number of epochs
     def train_network(self, debug, network, train, l_rate, n_epoch, n_outputs):
+        list_loss = []
         for _ in range(n_epoch):
+            list_expected = []
+            list_predicted = []
             for row in train:
-                self.forward_propagate(debug, network, row)
+                predicted = self.forward_propagate(debug, network, row)
                 expected = [0 for i in range(n_outputs)]
                 expected[row[-1]] = 1
+
+                list_predicted.append(predicted)
+                list_expected.append(expected)
+                #list_result = self.evaluate_loss_function(expected, predicted)
+                #list_loss.append(list_result)
+                #print('list_loss result:', len(list_loss), list_result)
                 self.backward_propagate_error(network, expected)
                 self.update_weights(network, row, l_rate)
+            list_result = self.evaluate_loss_function(list_expected, list_predicted)
+            list_loss.append(list_result)
+            print('list_loss result:', len(list_loss), list_result)
+        return list_loss
 
     # Initialize a network
     def initialize_network(self, n_inputs, n_hidden, n_outputs, hidden_layers):
@@ -236,7 +264,7 @@ class ModelBNN:
             print('len network', len(network), 'layers')
             for i in range(len(network)):
                 print('len network', i, len(network[i]), 'nodes in layer')
-        self.train_network(debug, network, train, l_rate, n_epoch, n_outputs)
+        list_loss = self.train_network(debug, network, train, l_rate, n_epoch, n_outputs)
         predictions = list()
         for row in test:
             prediction = self.predict(debug, network, row)
@@ -254,14 +282,14 @@ class ModelBNN:
             #print('network', network)
             #print('train', train)
             print('')
-        return(predictions)
+        return(predictions, list_loss)
 
 
     def runModel(self, idModelRunFeatures, trainInput, testInput, parametersList, targetClass='Outcome', saveDb=False, idFileRaw=None, benchmarkDir='benchmark', regression='off'):
         # out backpropagation method
         seed(1)
         # load and prepare data
-        dataset = self.load_csv(trainInput)
+        headers, dataset = self.load_csv(trainInput)
         print(type(dataset), len(dataset))
 
         for i in range(len(dataset[0])-1):
@@ -282,7 +310,7 @@ class ModelBNN:
         n_epoch = 50
         n_hidden = [5] # number of nodes in the unique hidden layer
         hidden_layers = 1 # adding number of hidden layers
-        scores = self.evaluate_algorithm(False, dataset, self.back_propagation, n_folds, l_rate, n_epoch, n_hidden, hidden_layers)
+        scores, list_loss = self.evaluate_algorithm(False, dataset, self.back_propagation, n_folds, l_rate, n_epoch, n_hidden, hidden_layers)
         print('Scores: %s' % scores)
         accuracyScore = sum(scores)/float(len(scores))
         print('Mean Accuracy(of %i): %.3f%%' % (len(scores), sum(scores)/float(len(scores))))
