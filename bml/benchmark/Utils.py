@@ -86,6 +86,18 @@ class Utils:
             plt.savefig(fileName)
             plt.close()
 
+    def saveImagesBNN(self, fileName, metric, loss_train, loss_test, n_epoch):
+            plt.switch_backend('Agg')
+            plt.plot(loss_train)
+            plt.plot(loss_test)
+            #plt.plot( [i for i in range(n_epoch)] )
+            plt.title('model ' + metric)
+            plt.ylabel(metric)
+            plt.xlabel('epoch')
+            plt.legend(['train', 'test'], loc='upper left')
+            plt.savefig(fileName)
+            plt.close()
+
     def saveImages(self, fileName, history, metric, valMetric):
             plt.switch_backend('Agg')
             plt.plot(history.history[metric])

@@ -100,7 +100,10 @@ class ModelBNN:
     def evaluate_algorithm(self, debug, dataset, algorithm, n_folds, l_rate, n_epoch, n_hidden, hidden_layers):
         folds = self.cross_validation_split(dataset, n_folds)
         scores = list()
-        list_loss = []
+        train_accuracy = list()
+        test_accuracy = list()
+        loss_train = []
+        loss_test = []
         for fold in folds:
             train_set = list(folds)
             train_set.remove(fold)
@@ -109,12 +112,12 @@ class ModelBNN:
             for row in fold:
                 row_copy = list(row)
                 test_set.append(row_copy)
-                row_copy[-1] = None
-            predicted, list_loss = algorithm(debug, train_set, test_set, l_rate, n_epoch, n_hidden, hidden_layers)
+            # predicted is from test data
+            predicted, loss_train, loss_test, train_accuracy, test_accuracy = algorithm(debug, train_set, test_set, l_rate, n_epoch, n_hidden, hidden_layers)
             actual = [row[-1] for row in fold]
             accuracy = self.accuracy_metric(actual, predicted)
             scores.append(accuracy)
-        return scores, list_loss
+        return scores, train_accuracy, test_accuracy, loss_train, loss_test
 
     # Calculate neuron activation for an input
     def activate(self, debug, weights, inputs):
@@ -210,11 +213,15 @@ class ModelBNN:
 
 
     # Train a network for a fixed number of epochs
-    def train_network(self, debug, network, train, l_rate, n_epoch, n_outputs):
-        list_loss = []
+    def train_network(self, debug, network, train, test, l_rate, n_epoch, n_outputs):
+        loss_train = []
+        loss_test = []
+        train_accuracy = []
+        test_accuracy = []
         for _ in range(n_epoch):
             list_expected = []
             list_predicted = []
+            cnt_predicted_train = 0
             for row in train:
                 predicted = self.forward_propagate(debug, network, row)
                 expected = [0 for i in range(n_outputs)]
@@ -222,15 +229,28 @@ class ModelBNN:
 
                 list_predicted.append(predicted)
                 list_expected.append(expected)
-                #list_result = self.evaluate_loss_function(expected, predicted)
-                #list_loss.append(list_result)
-                #print('list_loss result:', len(list_loss), list_result)
                 self.backward_propagate_error(network, expected)
                 self.update_weights(network, row, l_rate)
-            list_result = self.evaluate_loss_function(list_expected, list_predicted)
-            list_loss.append(list_result)
-            print('list_loss result:', len(list_loss), list_result)
-        return list_loss
+                if row[-1] == predicted.index(max(predicted)):
+                    cnt_predicted_train += 1
+            loss_train.append(self.evaluate_loss_function(list_expected, list_predicted))
+            train_accuracy.append(cnt_predicted_train / len(train) * 100)
+
+            # evaluate loss function for test data
+            list_predicted = []
+            list_expected = []
+            cnt_predicted_test = 0
+            for row in test:
+                predicted = self.forward_propagate(debug, network, row)
+                expected = [0 for i in range(n_outputs)]
+                expected[row[-1]] = 1
+                list_predicted.append(predicted)
+                list_expected.append(expected)
+                # calculate accuracy
+                if row[-1] == predicted.index(max(predicted)):
+                    cnt_predicted_test += 1
+            test_accuracy.append(cnt_predicted_test / len(test) * 100)
+        return loss_train, loss_test, train_accuracy, test_accuracy
 
     # Initialize a network
     def initialize_network(self, n_inputs, n_hidden, n_outputs, hidden_layers):
@@ -264,11 +284,14 @@ class ModelBNN:
             print('len network', len(network), 'layers')
             for i in range(len(network)):
                 print('len network', i, len(network[i]), 'nodes in layer')
-        list_loss = self.train_network(debug, network, train, l_rate, n_epoch, n_outputs)
+        loss_train, loss_test, train_accuracy, test_accuracy = self.train_network(debug, network, train, test, l_rate, n_epoch, n_outputs)
+
+        # evaluate test data and loss function for test
         predictions = list()
         for row in test:
             prediction = self.predict(debug, network, row)
             predictions.append(prediction)
+
         if debug:
             print('len train', len(train), 'rows in training set')
             print('len train 0', len(train[0]), '7 features + 1 label')
@@ -282,7 +305,7 @@ class ModelBNN:
             #print('network', network)
             #print('train', train)
             print('')
-        return(predictions, list_loss)
+        return(predictions, loss_train, loss_test, train_accuracy, test_accuracy)
 
 
     def runModel(self, idModelRunFeatures, trainInput, testInput, parametersList, targetClass='Outcome', saveDb=False, idFileRaw=None, benchmarkDir='benchmark', regression='off'):
@@ -310,14 +333,19 @@ class ModelBNN:
         n_epoch = 50
         n_hidden = [5] # number of nodes in the unique hidden layer
         hidden_layers = 1 # adding number of hidden layers
-        scores, list_loss = self.evaluate_algorithm(False, dataset, self.back_propagation, n_folds, l_rate, n_epoch, n_hidden, hidden_layers)
+        scores, train_accuracy, test_accuracy, loss_train, loss_test = self.evaluate_algorithm(False, dataset, self.back_propagation, n_folds, l_rate, n_epoch, n_hidden, hidden_layers)
         print('Scores: %s' % scores)
         accuracyScore = sum(scores)/float(len(scores))
-        print('Mean Accuracy(of %i): %.3f%%' % (len(scores), sum(scores)/float(len(scores))))
+        print('Mean Accuracy train(of %i): %.3f%%' % (len(train_accuracy), sum(train_accuracy)/float(len(train_accuracy))))
+        print('Mean Accuracy test (of %i): %.3f%%' % (len(test_accuracy), sum(test_accuracy)/float(len(test_accuracy))))
+
+        print('loss train:', loss_train)
+        print('loss test:', loss_test)
+        Utils.saveImagesBNN(self, benchmarkDir+'/static/benchmark/images/'+ str(idModelRunFeatures) + '_loss.png', 'loss', loss_train, loss_test, n_epoch)
+        Utils.saveImagesBNN(self, benchmarkDir+'/static/benchmark/images/'+ str(idModelRunFeatures) + '_accuracy.png', 'accuracy', train_accuracy, test_accuracy, n_epoch)
 
         '''
         Utils.saveImages(self, benchmarkDir+'/static/benchmark/images/'+ str(idModelRunFeatures) + '_accuracy.png', history, 'accuracy', 'val_accuracy')
-        Utils.saveImages(self, benchmarkDir+'/static/benchmark/images/'+ str(idModelRunFeatures) + '_loss.png', history, 'loss', 'val_loss')
         # alternatively for plotting use:
         # modelLoss = pd.DataFrame(history.history)
         # modelLoss.plot()
