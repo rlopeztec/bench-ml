@@ -97,27 +97,28 @@ class ModelBNN:
         return correct / float(len(actual)) * 100.0
 
     # Evaluate an algorithm using a cross validation split
-    def evaluate_algorithm(self, debug, dataset, algorithm, n_folds, l_rate, n_epoch, n_hidden, hidden_layers):
-        folds = self.cross_validation_split(dataset, n_folds)
+    def evaluate_algorithm(self, debug, dataset, datasetTest, algorithm, n_folds, l_rate, n_epoch, n_hidden, hidden_layers):
+        #folds = self.cross_validation_split(dataset, n_folds)
+        tmpdataset = self.cross_validation_split(dataset, 1)
         scores = list()
         train_accuracy = list()
         test_accuracy = list()
         loss_train = []
         loss_test = []
-        for fold in folds:
-            train_set = list(folds)
-            train_set.remove(fold)
-            train_set = sum(train_set, [])
-            test_set = list()
-            for row in fold:
-                row_copy = list(row)
-                test_set.append(row_copy)
-            # predicted is from test data
-            predicted, loss_train, loss_test, train_accuracy, test_accuracy = algorithm(debug, train_set, test_set, l_rate, n_epoch, n_hidden, hidden_layers)
-            actual = [row[-1] for row in fold]
-            accuracy = self.accuracy_metric(actual, predicted)
-            scores.append(accuracy)
-        return scores, train_accuracy, test_accuracy, loss_train, loss_test
+        #for fold in folds:
+        train_set = list(tmpdataset) #folds)
+        #train_set.remove(fold)
+        train_set = sum(train_set, [])
+        test_set = list()
+        for row in datasetTest: #fold:
+            row_copy = list(row)
+            test_set.append(row_copy)
+        # predicted is from test data
+        predicted_test, loss_train, loss_test, train_accuracy, test_accuracy = algorithm(debug, train_set, test_set, l_rate, n_epoch, n_hidden, hidden_layers)
+        actual_test = [row[-1] for row in datasetTest] #fold]
+        accuracy = self.accuracy_metric(actual_test, predicted_test)
+        scores.append(accuracy)
+        return actual_test, predicted_test, scores, train_accuracy, test_accuracy, loss_train, loss_test
 
     # Calculate neuron activation for an input
     def activate(self, debug, weights, inputs):
@@ -313,19 +314,24 @@ class ModelBNN:
         seed(1)
         # load and prepare data
         headers, dataset = self.load_csv(trainInput)
-        print(type(dataset), len(dataset))
+        headersTest, datasetTest = self.load_csv(testInput)
 
         for i in range(len(dataset[0])-1):
             self.str_column_to_float(dataset, i)
+        for i in range(len(datasetTest[0])-1):
+            self.str_column_to_float(datasetTest, i)
 
         # convert class column to integers
         self.str_column_to_int(dataset, len(dataset[0])-1)
+        self.str_column_to_int(datasetTest, len(datasetTest[0])-1)
 
         # normalize input variables
         minmax = self.dataset_minmax(dataset)
+        minmaxTest = self.dataset_minmax(datasetTest)
 
         # normalize input variables
         self.normalize_dataset(dataset, minmax)
+        self.normalize_dataset(datasetTest, minmaxTest)
 
         # evaluate algorithm
         n_folds = 5
@@ -333,7 +339,7 @@ class ModelBNN:
         n_epoch = 50
         n_hidden = [5] # number of nodes in the unique hidden layer
         hidden_layers = 1 # adding number of hidden layers
-        scores, train_accuracy, test_accuracy, loss_train, loss_test = self.evaluate_algorithm(False, dataset, self.back_propagation, n_folds, l_rate, n_epoch, n_hidden, hidden_layers)
+        actual_test, predicted_test, scores, train_accuracy, test_accuracy, loss_train, loss_test = self.evaluate_algorithm(False, dataset, datasetTest, self.back_propagation, n_folds, l_rate, n_epoch, n_hidden, hidden_layers)
         print('Scores: %s' % scores)
         accuracyScore = sum(scores)/float(len(scores))
         print('Mean Accuracy train(of %i): %.3f%%' % (len(train_accuracy), sum(train_accuracy)/float(len(train_accuracy))))
@@ -344,29 +350,12 @@ class ModelBNN:
         Utils.saveImagesBNN(self, benchmarkDir+'/static/benchmark/images/'+ str(idModelRunFeatures) + '_loss.png', 'loss', loss_train, loss_test, n_epoch)
         Utils.saveImagesBNN(self, benchmarkDir+'/static/benchmark/images/'+ str(idModelRunFeatures) + '_accuracy.png', 'accuracy', train_accuracy, test_accuracy, n_epoch)
 
-        '''
-        Utils.saveImages(self, benchmarkDir+'/static/benchmark/images/'+ str(idModelRunFeatures) + '_accuracy.png', history, 'accuracy', 'val_accuracy')
-        # alternatively for plotting use:
-        # modelLoss = pd.DataFrame(history.history)
-        # modelLoss.plot()
-
-        y_pred = model.predict(X_test)
-
-        y_test_class = np.argmax(y_test, axis=1)
-        y_pred_class = np.argmax(y_pred, axis=1)
-        #print(pd.Series(y_test_class).value_counts() / len(y_test_class))
-
-        accuracyScore = accuracy_score(y_test_class, y_pred_class)
-        print("Accuracy score: {:0.3}".format(accuracyScore))
-
-        classificationReport = classification_report(y_test_class, y_pred_class, output_dict=True)
-        confusionMatrix = confusion_matrix(y_test_class, y_pred_class)
-
-        # save to database
+        # save in the database
         if saveDb:
+            classificationReport = classification_report(actual_test, predicted_test, output_dict=True)
+            confusionMatrix = confusion_matrix(actual_test, predicted_test)
             ClassificationReport.saveClassificationReport(self,idModelRunFeatures, classificationReport)
             ConfusionMatrix.saveConfusionMatrix(self,idModelRunFeatures, confusionMatrix)
-        '''
 
         return accuracyScore
 

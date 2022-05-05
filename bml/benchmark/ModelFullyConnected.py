@@ -170,7 +170,8 @@ class ModelFullyConnected:
         #with name_scope('SERIES_NOTHING'):
         y_test_class = np.argmax(y_test, axis=1)
         y_pred_class = np.argmax(y_pred, axis=1)
-        #print(pd.Series(y_test_class).value_counts() / len(y_test_class))
+        print('test class:', len(y_test_class), y_test_class)
+        print('pred class:', len(y_pred_class), y_pred_class)
 
         #with name_scope('ACCURACY'):
         accuracyScore = accuracy_score(y_test_class, y_pred_class)
