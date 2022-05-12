@@ -23,26 +23,11 @@ from .models import Classification_Report, Confusion_Matrix
 from random import seed
 from random import randrange
 from random import random
+from random import shuffle
 from csv import reader
 from math import exp
 
 class ModelBNN:
-
-    # Load CSV file
-    def load_csv(self, filename):
-        dataset = list()
-        with open(filename, 'r') as file:
-            csv_reader = reader(file, delimiter='\t')
-            first = True
-            for row in csv_reader:
-                if first:
-                    headers = row
-                    first = False
-                else:
-                    if not row:
-                        continue
-                    dataset.append(row)
-        return headers, dataset
 
     # Convert string column to float
     def str_column_to_float(self, dataset, column):
@@ -98,27 +83,47 @@ class ModelBNN:
 
     # Evaluate an algorithm using a cross validation split
     def evaluate_algorithm(self, debug, dataset, datasetTest, algorithm, n_folds, l_rate, n_epoch, n_hidden, hidden_layers):
-        #folds = self.cross_validation_split(dataset, n_folds)
-        tmpdataset = self.cross_validation_split(dataset, 1)
         scores = list()
         train_accuracy = list()
         test_accuracy = list()
         loss_train = []
         loss_test = []
-        #for fold in folds:
-        train_set = list(tmpdataset) #folds)
-        #train_set.remove(fold)
-        train_set = sum(train_set, [])
-        test_set = list()
-        for row in datasetTest: #fold:
+        # True to use folds with cross validation
+        if True:
+            folds = self.cross_validation_split(dataset, n_folds)
+            first = True
+            for fold in folds:
+                if first:
+                    train_set = list(folds)
+                    train_set.remove(fold)
+                    train_set = sum(train_set, [])
+                    test_set = list()
+                    for row in fold:
+                        row_copy = list(row)
+                        test_set.append(row_copy)
+                first = True
+                actual_test = [row[-1] for row in fold]
+        else:
+            train_set = self.cross_validation_split(dataset, 1)
+            #train_set = list(dataset)
+            train_set = list(train_set)
+            train_set = sum(train_set, [])
+            shuffle(train_set)
+            test_set = list()
+            for row in datasetTest:
+                row_copy = list(row)
+                test_set.append(row_copy)
+            actual_test = [row[-1] for row in datasetTest] #fold]
+        fixtest_set = list()
+        for row in datasetTest:
             row_copy = list(row)
-            test_set.append(row_copy)
+            fixtest_set.append(row_copy)
+        #actual_test = [row[-1] for row in datasetTest] #to change test for fixtest
         # predicted is from test data
-        predicted_test, loss_train, loss_test, train_accuracy, test_accuracy = algorithm(debug, train_set, test_set, l_rate, n_epoch, n_hidden, hidden_layers)
-        actual_test = [row[-1] for row in datasetTest] #fold]
+        predicted_test, loss_train, loss_test, loss_fixtest, train_accuracy, test_accuracy, fixtest_accuracy = algorithm(debug, train_set, test_set, fixtest_set, l_rate, n_epoch, n_hidden, hidden_layers)
         accuracy = self.accuracy_metric(actual_test, predicted_test)
         scores.append(accuracy)
-        return actual_test, predicted_test, scores, train_accuracy, test_accuracy, loss_train, loss_test
+        return actual_test, predicted_test, scores, train_accuracy, test_accuracy, fixtest_accuracy, loss_train, loss_test, loss_fixtest
 
     # Calculate neuron activation for an input
     def activate(self, debug, weights, inputs):
@@ -214,11 +219,13 @@ class ModelBNN:
 
 
     # Train a network for a fixed number of epochs
-    def train_network(self, debug, network, train, test, l_rate, n_epoch, n_outputs):
+    def train_network(self, debug, network, train, test, fixtest, l_rate, n_epoch, n_outputs):
         loss_train = []
         loss_test = []
+        loss_fixtest = []
         train_accuracy = []
         test_accuracy = []
+        fixtest_accuracy = []
         for _ in range(n_epoch):
             list_expected = []
             list_predicted = []
@@ -250,8 +257,25 @@ class ModelBNN:
                 # calculate accuracy
                 if row[-1] == predicted.index(max(predicted)):
                     cnt_predicted_test += 1
+            loss_test.append(self.evaluate_loss_function(list_expected, list_predicted))
             test_accuracy.append(cnt_predicted_test / len(test) * 100)
-        return loss_train, loss_test, train_accuracy, test_accuracy
+
+            # evaluating fix test (our test data)
+            list_predicted = []
+            list_expected = []
+            cnt_predicted_test = 0
+            for row in fixtest:
+                predicted = self.forward_propagate(debug, network, row)
+                expected = [0 for i in range(n_outputs)]
+                expected[row[-1]] = 1
+                list_predicted.append(predicted)
+                list_expected.append(expected)
+                # calculate accuracy
+                if row[-1] == predicted.index(max(predicted)):
+                    cnt_predicted_test += 1
+            loss_fixtest.append(self.evaluate_loss_function(list_expected, list_predicted))
+            fixtest_accuracy.append(cnt_predicted_test / len(fixtest) * 100)
+        return loss_train, loss_test, loss_fixtest, train_accuracy, test_accuracy, fixtest_accuracy
 
     # Initialize a network
     def initialize_network(self, n_inputs, n_hidden, n_outputs, hidden_layers):
@@ -276,8 +300,8 @@ class ModelBNN:
         outputs = self.forward_propagate(debug, network, row)
         return outputs.index(max(outputs))
 
-    # Backpropagation Algorithm With Stochastic Gradient Descent
-    def back_propagation(self, debug, train, test, l_rate, n_epoch, n_hidden, hidden_layers):
+    # Neural Network with Backpropagation Algorithm With Stochastic Gradient Descent
+    def neural_network_bp(self, debug, train, test, fixtest, l_rate, n_epoch, n_hidden, hidden_layers):
         n_inputs = len(train[0]) - 1
         n_outputs = len(set([row[-1] for row in train]))
         network = self.initialize_network(n_inputs, n_hidden, n_outputs, hidden_layers)
@@ -285,7 +309,7 @@ class ModelBNN:
             print('len network', len(network), 'layers')
             for i in range(len(network)):
                 print('len network', i, len(network[i]), 'nodes in layer')
-        loss_train, loss_test, train_accuracy, test_accuracy = self.train_network(debug, network, train, test, l_rate, n_epoch, n_outputs)
+        loss_train, loss_test, loss_fixtest, train_accuracy, test_accuracy, fixtest_accuracy = self.train_network(debug, network, train, test, fixtest, l_rate, n_epoch, n_outputs)
 
         # evaluate test data and loss function for test
         predictions = list()
@@ -306,15 +330,15 @@ class ModelBNN:
             #print('network', network)
             #print('train', train)
             print('')
-        return(predictions, loss_train, loss_test, train_accuracy, test_accuracy)
+        return(predictions, loss_train, loss_test, loss_fixtest, train_accuracy, test_accuracy, fixtest_accuracy)
 
 
     def runModel(self, idModelRunFeatures, trainInput, testInput, parametersList, targetClass='Outcome', saveDb=False, idFileRaw=None, benchmarkDir='benchmark', regression='off'):
         # out backpropagation method
         seed(1)
         # load and prepare data
-        headers, dataset = self.load_csv(trainInput)
-        headersTest, datasetTest = self.load_csv(testInput)
+        headers, dataset = Utils.load_csv(self, trainInput, '\t')
+        headersTest, datasetTest = Utils.load_csv(self, testInput, '\t')
 
         for i in range(len(dataset[0])-1):
             self.str_column_to_float(dataset, i)
@@ -336,19 +360,20 @@ class ModelBNN:
         # evaluate algorithm
         n_folds = 5
         l_rate = 0.3
-        n_epoch = 50
+        n_epoch = int(parametersList['epochs']) #50
         n_hidden = [5] # number of nodes in the unique hidden layer
         hidden_layers = 1 # adding number of hidden layers
-        actual_test, predicted_test, scores, train_accuracy, test_accuracy, loss_train, loss_test = self.evaluate_algorithm(False, dataset, datasetTest, self.back_propagation, n_folds, l_rate, n_epoch, n_hidden, hidden_layers)
+        actual_test, predicted_test, scores, train_accuracy, test_accuracy, fixtest_accuracy, loss_train, loss_test, loss_fixtest = self.evaluate_algorithm(False, dataset, datasetTest, self.neural_network_bp, n_folds, l_rate, n_epoch, n_hidden, hidden_layers)
         print('Scores: %s' % scores)
         accuracyScore = sum(scores)/float(len(scores))
         print('Mean Accuracy train(of %i): %.3f%%' % (len(train_accuracy), sum(train_accuracy)/float(len(train_accuracy))))
         print('Mean Accuracy test (of %i): %.3f%%' % (len(test_accuracy), sum(test_accuracy)/float(len(test_accuracy))))
+        print('Mean Accuracy fixtest (of %i): %.3f%%' % (len(fixtest_accuracy), sum(fixtest_accuracy)/float(len(fixtest_accuracy))))
 
-        print('loss train:', loss_train)
-        print('loss test:', loss_test)
-        Utils.saveImagesBNN(self, benchmarkDir+'/static/benchmark/images/'+ str(idModelRunFeatures) + '_loss.png', 'loss', loss_train, loss_test, n_epoch)
-        Utils.saveImagesBNN(self, benchmarkDir+'/static/benchmark/images/'+ str(idModelRunFeatures) + '_accuracy.png', 'accuracy', train_accuracy, test_accuracy, n_epoch)
+        #print('loss train:', loss_train)
+        #print('loss test:', loss_test)
+        Utils.saveImagesBNN(self, benchmarkDir+'/static/benchmark/images/'+ str(idModelRunFeatures) + '_loss.png', 'loss', loss_train, loss_test, loss_fixtest, n_epoch)
+        Utils.saveImagesBNN(self, benchmarkDir+'/static/benchmark/images/'+ str(idModelRunFeatures) + '_accuracy.png', 'accuracy', train_accuracy, test_accuracy, fixtest_accuracy, n_epoch)
 
         # save in the database
         if saveDb:

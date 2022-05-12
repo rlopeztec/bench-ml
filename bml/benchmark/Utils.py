@@ -4,6 +4,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from csv import reader
 from django.utils import timezone
 from sklearn.model_selection import validation_curve, learning_curve
 from sklearn.svm import SVC 
@@ -86,15 +87,20 @@ class Utils:
             plt.savefig(fileName)
             plt.close()
 
-    def saveImagesBNN(self, fileName, metric, loss_train, loss_test, n_epoch):
+    def saveImagesBNN(self, fileName, metric, loss_train, loss_test, loss_fixtest, n_epoch):
             plt.switch_backend('Agg')
             plt.plot(loss_train)
             plt.plot(loss_test)
+            if loss_fixtest != None:
+                plt.plot(loss_fixtest)
             #plt.plot( [i for i in range(n_epoch)] )
             plt.title('model ' + metric)
             plt.ylabel(metric)
             plt.xlabel('epoch')
-            plt.legend(['train', 'test'], loc='upper left')
+            if loss_fixtest != None:
+                plt.legend(['train', 'test', 'fixtest'], loc='upper left')
+            else:
+                plt.legend(['train', 'test'], loc='upper left')
             plt.savefig(fileName)
             plt.close()
 
@@ -142,6 +148,22 @@ class Utils:
         #print(foundList)
         #print(returnList)
         return returnList, foundList
+
+    # Load CSV file
+    def load_csv(self, filename, delimiter='\t'):
+        dataset = list()
+        with open(filename, 'r') as file:
+            csv_reader = reader(file, delimiter=delimiter)
+            first = True
+            for row in csv_reader:
+                if first:
+                    headers = row
+                    first = False
+                else:
+                    if not row:
+                        continue
+                    dataset.append(row)
+        return headers, dataset
 
 if __name__ == '__main__':
     print('Utils')

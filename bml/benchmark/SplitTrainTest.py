@@ -5,8 +5,11 @@
 
 import sys
 import argparse
+from csv import reader
+from random import shuffle
 
 class SplitTrainTest():
+
     ##########################################################################
     # read genes scoring file and return top n genes
     ##########################################################################
@@ -15,28 +18,40 @@ class SplitTrainTest():
         retClasses = {}
         retLines = []
         targetCol = None
-        delimiter = '\t'
         if fileType == 'csv':
             delimiter = ','
-        with open(inputFile, 'r') as input:
-            c = 0
-            for line in input:
-                cols = line.rstrip().split(delimiter)
-                retLines.append(cols)
-                if c == 0:
-                    #print('SplitTrainTest cols', cols)
-                    for i in range(0,len(cols)):
-                        if cols[i] == targetClass:
-                            targetCol = i
-                    if targetCol == None:
-                        raise Exception('COLUMN DOESNT EXIST', targetClass, 'in', inputFile)
+        else:
+            delimiter = '\t'
+
+        # get input file as a list
+        dataset = list()
+        headers = list()
+        with open(inputFile, 'r') as file:
+            csv_reader = reader(file, delimiter=delimiter)
+            first = True
+            for row in csv_reader:
+                if first:
+                    headers = row
+                    first = False
                 else:
-                    if cols[targetCol] in retClasses:
-                        retClasses[cols[targetCol]] = retClasses[cols[targetCol]] + 1
-                    else:
-                        retClasses[cols[targetCol]] = 1
-                c += 1
-        print('reading inputFile', inputFile, 'lines', c, 'classes', len(retClasses), file=sys.stderr)
+                    if not row:
+                        continue
+                    dataset.append(row)
+        # get Label/Class position
+        for i in range(0,len(headers)):
+            if headers[i] == targetClass:
+                targetCol = i
+        if targetCol == None:
+            raise Exception('COLUMN DOESNT EXIST', targetClass, 'in', inputFile)
+        shuffle(dataset)
+        for cols in dataset:
+            #cols = line.rstrip().split(delimiter)
+            retLines.append(cols)
+            if cols[targetCol] in retClasses:
+                retClasses[cols[targetCol]] = retClasses[cols[targetCol]] + 1
+            else:
+                retClasses[cols[targetCol]] = 1
+        print('reading inputFile', inputFile, 'lines', len(dataset), 'classes', len(retClasses), file=sys.stderr)
         print(retClasses, file=sys.stderr)
         return targetCol, retLines, retClasses
 
