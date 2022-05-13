@@ -95,7 +95,7 @@ class ModelBNN:
             for fold in folds:
                 if first:
                     train_set = list(folds)
-                    train_set.remove(fold)
+                    #train_set.remove(fold)
                     train_set = sum(train_set, [])
                     test_set = list()
                     for row in fold:
@@ -108,7 +108,7 @@ class ModelBNN:
             #train_set = list(dataset)
             train_set = list(train_set)
             train_set = sum(train_set, [])
-            shuffle(train_set)
+            #shuffle(train_set)
             test_set = list()
             for row in datasetTest:
                 row_copy = list(row)
@@ -118,9 +118,9 @@ class ModelBNN:
         for row in datasetTest:
             row_copy = list(row)
             fixtest_set.append(row_copy)
-        #actual_test = [row[-1] for row in datasetTest] #to change test for fixtest
+        actual_test = [row[-1] for row in datasetTest] #to change test for fixtest
         # predicted is from test data
-        predicted_test, loss_train, loss_test, loss_fixtest, train_accuracy, test_accuracy, fixtest_accuracy = algorithm(debug, train_set, test_set, fixtest_set, l_rate, n_epoch, n_hidden, hidden_layers)
+        predicted_test, loss_train, loss_test, loss_fixtest, train_accuracy, test_accuracy, fixtest_accuracy = algorithm(debug, train_set, fixtest_set, test_set, l_rate, n_epoch, n_hidden, hidden_layers)
         accuracy = self.accuracy_metric(actual_test, predicted_test)
         scores.append(accuracy)
         return actual_test, predicted_test, scores, train_accuracy, test_accuracy, fixtest_accuracy, loss_train, loss_test, loss_fixtest
@@ -359,9 +359,9 @@ class ModelBNN:
 
         # evaluate algorithm
         n_folds = 5
-        l_rate = 0.3
-        n_epoch = int(parametersList['epochs']) #50
-        n_hidden = [5] # number of nodes in the unique hidden layer
+        l_rate = float(parametersList['learning_rate']) #0.3
+        n_epoch = int(parametersList['epochs'])         #50
+        n_hidden = [int(parametersList['filters'])]     #5] # number of nodes in the unique hidden layer
         hidden_layers = 1 # adding number of hidden layers
         actual_test, predicted_test, scores, train_accuracy, test_accuracy, fixtest_accuracy, loss_train, loss_test, loss_fixtest = self.evaluate_algorithm(False, dataset, datasetTest, self.neural_network_bp, n_folds, l_rate, n_epoch, n_hidden, hidden_layers)
         print('Scores: %s' % scores)
