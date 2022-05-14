@@ -101,7 +101,7 @@ class ModelBNN:
                     for row in fold:
                         row_copy = list(row)
                         test_set.append(row_copy)
-                first = True
+                first = False
                 actual_test = [row[-1] for row in fold]
         else:
             train_set = self.cross_validation_split(dataset, 1)
