@@ -43,7 +43,11 @@ class SplitTrainTest():
                 targetCol = i
         if targetCol == None:
             raise Exception('COLUMN DOESNT EXIST', targetClass, 'in', inputFile)
+
+        # add headers after shuffle
         shuffle(dataset)
+        dataset = [headers] + dataset
+
         for cols in dataset:
             #cols = line.rstrip().split(delimiter)
             retLines.append(cols)
@@ -59,6 +63,7 @@ class SplitTrainTest():
     # write output train and test files
     ##########################################################################
     def writeOutputFiles(self, percent, targetCol, retLines, retClasses, outputTraining, outputTest):
+        print('write output files',outputTraining,'targetCol',targetCol, 'lines', len(retLines), 'classes', len(retClasses), file=sys.stderr)
         linesTraining = 0
         linesTest = 0
         cClasses = {}
